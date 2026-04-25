@@ -44,7 +44,7 @@ export default function Configuracoes() {
       </section>
 
       <Tabs defaultValue="perfil" className="space-y-4">
-        <TabsList className="grid h-auto w-full max-w-xl grid-cols-3 bg-muted/25 p-1">
+        <TabsList className="grid h-auto w-full max-w-xl grid-cols-1 bg-muted/25 p-1 sm:grid-cols-3">
           <TabsTrigger value="perfil">Perfil</TabsTrigger>
           <TabsTrigger value="tema">Tema</TabsTrigger>
           <TabsTrigger value="preferencias">Preferencias</TabsTrigger>

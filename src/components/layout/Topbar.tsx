@@ -11,7 +11,7 @@ export function Topbar() {
   const navigate = useNavigate();
 
   return (
-    <header className="flex h-14 flex-shrink-0 items-center justify-between border-b border-border bg-card/65 px-4 backdrop-blur-md md:px-6">
+    <header className="flex min-h-14 flex-shrink-0 items-center justify-between gap-2 border-b border-border bg-card/65 px-3 py-2 backdrop-blur-md sm:px-4 md:px-6">
       <div className="flex min-w-0 items-center gap-3">
         <SidebarTrigger className="text-muted-foreground hover:bg-muted/50 hover:text-foreground md:hidden" />
         <div className="min-w-0">
@@ -20,10 +20,10 @@ export function Topbar() {
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex min-w-0 shrink-0 items-center gap-1.5 sm:gap-2">
         <div
-          className={`hidden items-center gap-2 rounded-lg border px-3 py-1.5 transition-all duration-200 sm:flex ${
-            searchFocused ? "w-64 border-primary bg-muted/50" : "w-48 border-border bg-muted/30"
+          className={`hidden items-center gap-2 rounded-lg border px-3 py-1.5 transition-all duration-200 lg:flex ${
+            searchFocused ? "w-[min(20rem,28vw)] border-primary bg-muted/50" : "w-[min(14rem,22vw)] border-border bg-muted/30"
           }`}
         >
           <Search className="h-3.5 w-3.5 text-muted-foreground" />
@@ -51,11 +51,11 @@ export function Topbar() {
           <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-primary" />
         </button>
 
-        <button type="button" className="flex items-center gap-2 rounded-lg p-1.5 transition-colors hover:bg-muted/50">
+        <button type="button" className="flex min-w-0 items-center gap-2 rounded-lg p-1.5 transition-colors hover:bg-muted/50">
           <div className="flex h-7 w-7 items-center justify-center rounded-full border border-primary/30 bg-primary/20">
             <User className="h-3.5 w-3.5 text-primary" />
           </div>
-          <span className="hidden max-w-36 truncate text-xs font-medium text-muted-foreground lg:inline">
+          <span className="hidden max-w-28 truncate text-xs font-medium text-muted-foreground xl:inline">
             {user?.name || "Engenharia"}
           </span>
         </button>

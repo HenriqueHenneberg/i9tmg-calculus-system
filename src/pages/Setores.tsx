@@ -17,13 +17,16 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { SectorCard } from "@/components/SectorCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { useAuth } from "@/contexts/AuthContext";
 import { useIndustrialWorkspace } from "@/contexts/IndustrialWorkspaceContext";
 import type { SectorId } from "@/lib/industrial-data";
+import { adminOnlyMessage, canCreateSector } from "@/lib/permissions";
 
 const sectorIcons = {
   mecanica: Wrench,
@@ -45,7 +48,9 @@ const sectorIcons = {
 
 export default function Setores() {
   const navigate = useNavigate();
-  const { formulas, sectors } = useIndustrialWorkspace();
+  const { role } = useAuth();
+  const { formulas, sectors, saveSector } = useIndustrialWorkspace();
+  const admin = canCreateSector(role);
   const [selectedSector, setSelectedSector] = useState<SectorId>("mecanica");
 
   const activeSector = sectors.find((sector) => sector.id === selectedSector) || sectors[0];
@@ -53,6 +58,17 @@ export default function Setores() {
     () => formulas.filter((formula) => formula.sectorId === activeSector.id),
     [activeSector.id, formulas],
   );
+
+  const editSector = () => {
+    if (!admin) {
+      toast.error(adminOnlyMessage());
+      return;
+    }
+    const description = window.prompt("Descricao do setor", activeSector.description);
+    if (!description?.trim()) return;
+    saveSector({ ...activeSector, description: description.trim() });
+    toast.success("Setor atualizado.");
+  };
 
   return (
     <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-6">
@@ -71,12 +87,22 @@ export default function Setores() {
         >
           Abrir console de calculos
         </Button>
+        {admin && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={editSector}
+            className="h-11 border-border bg-muted/25 text-foreground hover:bg-muted/50"
+          >
+            Editar setor selecionado
+          </Button>
+        )}
       </section>
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {sectors.map((sector, index) => (
           <div key={sector.id} onClick={() => setSelectedSector(sector.id)} className="cursor-pointer">
-            <SectorCard sector={sector} icon={sectorIcons[sector.id]} index={index} onOpen={() => navigate("/calculos")} />
+            <SectorCard sector={sector} icon={sectorIcons[sector.id as keyof typeof sectorIcons] || Factory} index={index} onOpen={() => navigate("/calculos")} />
           </div>
         ))}
       </section>
@@ -87,7 +113,7 @@ export default function Setores() {
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Setor selecionado</p>
             <CardTitle className="mt-1 flex items-center gap-3 text-xl text-foreground">
               {(() => {
-                const Icon = sectorIcons[activeSector.id];
+                const Icon = sectorIcons[activeSector.id as keyof typeof sectorIcons] || Factory;
                 return <Icon className="h-5 w-5 text-primary" />;
               })()}
               {activeSector.name}
@@ -95,7 +121,7 @@ export default function Setores() {
           </CardHeader>
           <CardContent className="space-y-5 p-5">
             <p className="text-sm leading-relaxed text-muted-foreground">{activeSector.description}</p>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <Metric label="Formulas" value={activeSector.formulas} />
               <Metric label="Calculos" value={activeSector.activeCalculations} />
               <Metric label="Uso" value={activeSector.usageLevel} />

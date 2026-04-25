@@ -157,7 +157,7 @@ export default function Historico() {
             Consulte, visualize e duplique calculos tecnicos ja executados pela operacao.
           </p>
         </div>
-        <div className="grid grid-cols-3 gap-3 text-center">
+        <div className="grid grid-cols-1 gap-3 text-center sm:grid-cols-3">
           <Metric label="Registros" value={filteredItems.length} />
           <Metric label="Validados" value={filteredItems.filter((item) => item.status === "Validado").length} />
           <Metric label="Revisao" value={filteredItems.filter((item) => item.status !== "Validado").length} />

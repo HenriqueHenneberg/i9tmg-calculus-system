@@ -25,8 +25,9 @@ interface DataTableProps<T> {
 
 export function DataTable<T>({ data, columns, getRowKey, emptyMessage = "Nenhum registro encontrado." }: DataTableProps<T>) {
   return (
-    <div className="overflow-hidden rounded-lg border border-border/70 bg-card/70">
-      <Table>
+    <div className="max-w-full overflow-hidden rounded-lg border border-border/70 bg-card/70">
+      <div className="w-full overflow-x-auto">
+      <Table className="min-w-[760px]">
         <TableHeader className="bg-muted/30">
           <TableRow className="hover:bg-transparent">
             {columns.map((column) => (
@@ -59,6 +60,7 @@ export function DataTable<T>({ data, columns, getRowKey, emptyMessage = "Nenhum 
           )}
         </TableBody>
       </Table>
+      </div>
     </div>
   );
 }

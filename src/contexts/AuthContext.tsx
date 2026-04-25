@@ -12,7 +12,7 @@ interface AuthContextValue {
   user: AuthUser | null;
   role: UserRole | null;
   isAuthenticated: boolean;
-  login: (username: string, password: string) => boolean;
+  login: (username: string, password?: string) => boolean;
   logout: () => void;
 }
 
@@ -29,18 +29,26 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(() => readSession());
 
-  const login = (username: string, password: string) => {
-    // Autenticação apenas demonstrativa. Para produção, migrar autenticação para backend com hash de senha e JWT seguro.
+  const login = (username: string, password = "") => {
+    // Autenticacao apenas demonstrativa. Para producao, migrar autenticacao para backend com hash de senha e JWT seguro.
     const normalizedUsername = username.trim();
-    const validAdminPassword = password === "77$3ekX#" || password === "admin";
+    if (!normalizedUsername) return false;
 
-    if (normalizedUsername === adminUser.username && validAdminPassword) {
+    if (normalizedUsername === adminUser.username) {
+      if (password !== "ladmin") return false;
       setUser(adminUser);
       window.localStorage.setItem(authStorageKey, JSON.stringify(adminUser));
       return true;
     }
 
-    return false;
+    const commonUser: AuthUser = {
+      username: normalizedUsername,
+      name: normalizedUsername,
+      role: "user",
+    };
+    setUser(commonUser);
+    window.localStorage.setItem(authStorageKey, JSON.stringify(commonUser));
+    return true;
   };
 
   const logout = () => {

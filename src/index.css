@@ -66,6 +66,12 @@
   body {
     @apply bg-background text-foreground antialiased;
     background: #0A2540;
+    overflow-x: hidden;
+  }
+
+  #root {
+    min-height: 100vh;
+    overflow-x: hidden;
   }
 
   ::-webkit-scrollbar {

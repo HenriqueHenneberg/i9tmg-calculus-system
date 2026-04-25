@@ -17,6 +17,7 @@ import type { Formula, SectorId } from "@/lib/industrial-data";
 export default function Calculos() {
   const { formulas, sectors, favoriteIds, isFavorite, toggleFavorite, recordCalculation } = useIndustrialWorkspace();
   const { user } = useAuth();
+  const admin = user?.role === "admin";
   const [searchParams] = useSearchParams();
   const [search, setSearch] = useState("");
   const [selectedSector, setSelectedSector] = useState<SectorId | "todos">("todos");
@@ -136,7 +137,7 @@ export default function Calculos() {
             passo a passo.
           </p>
         </div>
-        <div className="grid grid-cols-3 gap-2 text-center">
+        <div className="grid grid-cols-1 gap-2 text-center sm:grid-cols-3">
           <Metric label="Formulas" value={formulas.length} />
           <Metric label="Setores" value={sectors.length} />
           <Metric label="Favoritos" value={favoriteIds.length} />
@@ -264,8 +265,8 @@ export default function Calculos() {
             values={values}
             errors={errors}
             loading={loading}
-            favorite={isFavorite(selectedFormula.id)}
-            onToggleFavorite={() => toggleFavorite(selectedFormula.id)}
+          favorite={isFavorite(selectedFormula.id)}
+          onToggleFavorite={admin ? () => toggleFavorite(selectedFormula.id) : undefined}
             onUseExample={fillExample}
             onChange={(name, value) => {
               setValues((current) => ({ ...current, [name]: value }));

@@ -1,6 +1,6 @@
 import { evaluateFormula } from "@/lib/formula-engine";
 
-export type SectorId =
+export type BaseSectorId =
   | "mecanica"
   | "eletrica"
   | "hidraulica"
@@ -16,6 +16,8 @@ export type SectorId =
   | "planejamento"
   | "energia"
   | "elevadores_mistura_90";
+
+export type SectorId = BaseSectorId | (string & {});
 
 export type Difficulty = "Basica" | "Intermediaria" | "Avancada";
 export type UsageLevel = "Baixo" | "Moderado" | "Alto" | "Critico";

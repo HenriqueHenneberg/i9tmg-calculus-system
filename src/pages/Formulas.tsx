@@ -29,7 +29,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useIndustrialWorkspace } from "@/contexts/IndustrialWorkspaceContext";
 import { formatFormulaForDisplay, validateFormula } from "@/lib/formula-engine";
 import type { Difficulty, Formula, FormulaStatus, SectorId } from "@/lib/industrial-data";
-import { adminOnlyMessage, canApproveFormula, canCreateSector, canEditFormula } from "@/lib/permissions";
+import { adminOnlyMessage, canApproveFormula, canCreateFormula, canCreateSector, canEditFormula } from "@/lib/permissions";
 
 interface VariableDraft {
   id: string;
@@ -84,13 +84,14 @@ export default function Formulas() {
   const {
     formulas,
     sectors,
+    saveSector,
     saveFormula,
     duplicateFormula,
     removeFormula,
     updateFormulaStatus,
     isFavorite,
-    toggleFavorite,
   } = useIndustrialWorkspace();
+  const admin = canApproveFormula(role);
   const [search, setSearch] = useState("");
   const [sectorFilter, setSectorFilter] = useState<SectorId | "todos">("todos");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -200,12 +201,12 @@ export default function Formulas() {
     }
 
     const existing = formulas.find((item) => item.id === editingId);
-    if (existing && !canEditFormula(role, existing)) {
+    if (!canCreateFormula(role)) {
       toast.error(adminOnlyMessage());
       return;
     }
 
-    const nextStatus = canApproveFormula(role) ? draft.status : "rascunho";
+    const nextStatus = draft.status;
     const formula: Formula = {
       id: editingId || `custom-${Date.now()}`,
       name: draft.name.trim(),
@@ -253,7 +254,7 @@ export default function Formulas() {
   };
 
   const setStatus = (formula: Formula, status: FormulaStatus) => {
-    if (!canApproveFormula(role) && status !== "em_revisao") {
+    if (!canApproveFormula(role)) {
       toast.error(adminOnlyMessage());
       return;
     }
@@ -262,7 +263,7 @@ export default function Formulas() {
   };
 
   const guardedEdit = (formula: Formula) => {
-    if (!canEditFormula(role, formula)) {
+    if (!canEditFormula(role)) {
       toast.error(adminOnlyMessage());
       return;
     }
@@ -274,7 +275,23 @@ export default function Formulas() {
       toast.error(adminOnlyMessage());
       return;
     }
-    toast.info("Criacao de setores customizados reservada ao painel administrativo.");
+    const name = window.prompt("Nome do novo setor");
+    if (!name?.trim()) return;
+    const description = window.prompt("Descricao tecnica do setor") || "Setor personalizado criado pelo administrador.";
+    const id = `custom_${name.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "")}_${Date.now()}`;
+    saveSector({
+      id,
+      name: name.trim(),
+      description,
+      formulas: 0,
+      activeCalculations: 0,
+      health: 70,
+      trend: "+0%",
+      usageLevel: "Moderado",
+      color: "#ff6a00",
+      iconName: "Factory",
+    });
+    toast.success("Setor criado com sucesso.");
   };
 
   const handleDuplicate = (id: string) => {
@@ -296,10 +313,12 @@ export default function Formulas() {
             Crie calculos novos sem programar, valide a expressao, cadastre variaveis e use imediatamente no console.
           </p>
         </div>
-        <Button type="button" onClick={openCreateDialog} className="h-11 bg-primary text-primary-foreground glow-primary hover:bg-highlight-glow">
-          <Plus className="h-4 w-4" />
-          Nova formula
-        </Button>
+        {admin && (
+          <Button type="button" onClick={openCreateDialog} className="h-11 bg-primary text-primary-foreground glow-primary hover:bg-highlight-glow">
+            <Plus className="h-4 w-4" />
+            Nova formula
+          </Button>
+        )}
       </section>
 
       <section className="grid gap-4 lg:grid-cols-[340px_1fr]">
@@ -337,10 +356,12 @@ export default function Formulas() {
               <Metric label="Variaveis" value={formulas.reduce((total, formula) => total + formula.variables.length, 0)} />
               <Metric label="Custom" value={formulas.filter((formula) => formula.isCustom).length} />
             </div>
-            <Button type="button" variant="outline" onClick={requestNewSector} className="w-full border-border bg-muted/25 text-foreground">
-              <Plus className="h-4 w-4" />
-              Novo setor
-            </Button>
+            {admin && (
+              <Button type="button" variant="outline" onClick={requestNewSector} className="w-full border-border bg-muted/25 text-foreground">
+                <Plus className="h-4 w-4" />
+                Novo setor
+              </Button>
+            )}
             <div className="rounded-lg border border-primary/25 bg-primary/10 p-4">
               <div className="flex items-start gap-3">
                 <Sparkles className="mt-0.5 h-4 w-4 text-primary" />
@@ -363,19 +384,16 @@ export default function Formulas() {
                     </Badge>
                   ))}
                 </div>
-                <div className="flex gap-2">
-                  <Button type="button" variant="outline" size="sm" onClick={() => toggleFavorite(formula.id)} className="border-border bg-muted/25 text-foreground">
-                    Favorito
-                  </Button>
-                  <Button type="button" variant="outline" size="sm" onClick={() => handleDuplicate(formula.id)} className="border-border bg-muted/25 text-foreground">
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                  <Button type="button" variant="outline" size="sm" onClick={() => setStatus(formula, "em_revisao")} className="border-border bg-muted/25 text-foreground">
-                    <Send className="h-4 w-4" />
-                    Revisao
-                  </Button>
-                  {canApproveFormula(role) && (
+                <div className="flex flex-wrap justify-end gap-2">
+                  {admin ? (
                     <>
+                      <Button type="button" variant="outline" size="sm" onClick={() => handleDuplicate(formula.id)} className="border-border bg-muted/25 text-foreground">
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                      <Button type="button" variant="outline" size="sm" onClick={() => setStatus(formula, "em_revisao")} className="border-border bg-muted/25 text-foreground">
+                        <Send className="h-4 w-4" />
+                        Revisao
+                      </Button>
                       <Button type="button" variant="outline" size="sm" onClick={() => setStatus(formula, "validada")} className="border-info/30 bg-info/10 text-info">
                         <CheckCircle2 className="h-4 w-4" />
                         Validar
@@ -386,21 +404,27 @@ export default function Formulas() {
                       <Button type="button" variant="outline" size="sm" onClick={() => setStatus(formula, "arquivada")} className="border-destructive/30 bg-destructive/10 text-destructive">
                         <Archive className="h-4 w-4" />
                       </Button>
+                      <Button type="button" variant="outline" size="sm" onClick={() => guardedEdit(formula)} className="border-border bg-muted/25 text-foreground">
+                        <Edit3 className="h-4 w-4" />
+                        Editar
+                      </Button>
                     </>
+                  ) : (
+                    <Badge variant="outline" className="border-border bg-muted/25 text-muted-foreground">
+                      Somente visualizacao
+                    </Badge>
                   )}
-                  <Button type="button" variant="outline" size="sm" onClick={() => guardedEdit(formula)} className="border-border bg-muted/25 text-foreground">
-                    <Edit3 className="h-4 w-4" />
-                    Editar
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleRemoveFormula(formula.id)}
-                    className="border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive hover:text-destructive-foreground"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  {admin && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleRemoveFormula(formula.id)}
+                      className="border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
               </div>
             </FormulaCard>

@@ -66,7 +66,7 @@ export default function Dashboard() {
             Ola, {userName}. Visao consolidada de calculos, setores, formulas e validacoes para operacao industrial.
           </p>
         </div>
-        <div className="grid grid-cols-3 gap-3 text-center">
+        <div className="grid grid-cols-1 gap-3 text-center sm:grid-cols-3">
           <div className="rounded-lg border border-border/70 bg-muted/20 px-4 py-3">
             <p className="font-mono text-2xl font-semibold text-primary">98.4%</p>
             <p className="text-xs text-muted-foreground">Confiabilidade</p>
@@ -124,7 +124,7 @@ export default function Dashboard() {
               <h2 className="mt-2 text-2xl font-semibold text-foreground">Elevadores e Mistura 90</h2>
               <p className="mt-2 max-w-3xl text-sm leading-relaxed text-muted-foreground">{mistura90Sector.description}</p>
             </div>
-            <div className="grid grid-cols-3 gap-3 text-center">
+            <div className="grid grid-cols-1 gap-3 text-center sm:grid-cols-3">
               <Metric label="Formulas" value={mistura90Formulas.length} />
               <Metric label="Uso" value={mistura90Sector.activeCalculations} />
               <Metric label="Saude" value={`${mistura90Sector.health}%`} />

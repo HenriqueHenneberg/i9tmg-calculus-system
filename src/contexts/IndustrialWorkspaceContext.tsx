@@ -11,6 +11,7 @@ import {
 interface StoredWorkspace {
   userName: string;
   favoriteIds: string[];
+  customSectors: Sector[];
   customFormulas: Formula[];
   formulaOverrides: Record<string, Formula>;
   customHistory: CalculationRecord[];
@@ -23,6 +24,7 @@ interface IndustrialWorkspaceContextValue {
   sectors: Sector[];
   history: CalculationRecord[];
   favoriteIds: string[];
+  saveSector: (sector: Sector) => void;
   saveFormula: (formula: Formula) => void;
   duplicateFormula: (formulaId: string) => Formula | null;
   removeFormula: (formulaId: string) => boolean;
@@ -37,6 +39,7 @@ const storageKey = "tech-calculus-industrial-workspace-v2";
 const initialWorkspace: StoredWorkspace = {
   userName: "",
   favoriteIds: ["torque", "oee", "potencia-trifasica", "mtbf"],
+  customSectors: [],
   customFormulas: [],
   formulaOverrides: {},
   customHistory: [],
@@ -62,7 +65,7 @@ export function IndustrialWorkspaceProvider({ children }: { children: ReactNode 
   );
 
   const sectors = useMemo(() => {
-    return catalogSectors.map((sector) => {
+    return [...catalogSectors, ...workspace.customSectors].map((sector) => {
       const formulaCount = formulas.filter((formula) => formula.sectorId === sector.id).length;
       const newExecutions = workspace.customHistory.filter((item) => item.sectorId === sector.id).length;
       return {
@@ -71,7 +74,19 @@ export function IndustrialWorkspaceProvider({ children }: { children: ReactNode 
         activeCalculations: sector.activeCalculations + newExecutions,
       };
     });
-  }, [formulas, workspace.customHistory]);
+  }, [formulas, workspace.customHistory, workspace.customSectors]);
+
+  const saveSector = (sector: Sector) => {
+    setWorkspace((current) => {
+      const exists = current.customSectors.some((item) => item.id === sector.id);
+      return {
+        ...current,
+        customSectors: exists
+          ? current.customSectors.map((item) => (item.id === sector.id ? sector : item))
+          : [sector, ...current.customSectors],
+      };
+    });
+  };
 
   const saveFormula = (formula: Formula) => {
     setWorkspace((current) => {
@@ -185,6 +200,7 @@ export function IndustrialWorkspaceProvider({ children }: { children: ReactNode 
     sectors,
     history,
     favoriteIds: workspace.favoriteIds,
+    saveSector,
     saveFormula,
     duplicateFormula,
     removeFormula,
@@ -214,6 +230,7 @@ function readWorkspace(): StoredWorkspace {
       ...initialWorkspace,
       ...parsed,
       favoriteIds: parsed.favoriteIds || initialWorkspace.favoriteIds,
+      customSectors: parsed.customSectors || [],
       customFormulas: parsed.customFormulas || [],
       formulaOverrides: parsed.formulaOverrides || {},
       customHistory: parsed.customHistory || [],

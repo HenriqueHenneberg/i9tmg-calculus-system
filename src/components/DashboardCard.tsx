@@ -40,7 +40,7 @@ export function DashboardCard({
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0 space-y-2">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">{title}</p>
-              <p className="font-mono text-3xl font-semibold leading-none text-foreground">{value}</p>
+              <p className="break-words font-mono text-2xl font-semibold leading-tight text-foreground sm:text-3xl">{value}</p>
               {subtitle && <p className="text-sm text-muted-foreground">{subtitle}</p>}
             </div>
             <div className={cn("rounded-lg border p-2.5", accentClasses[accent])}>
