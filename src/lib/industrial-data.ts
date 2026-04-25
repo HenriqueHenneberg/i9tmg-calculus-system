@@ -14,10 +14,12 @@ export type SectorId =
   | "logistica"
   | "qualidade"
   | "planejamento"
-  | "energia";
+  | "energia"
+  | "elevadores_mistura_90";
 
 export type Difficulty = "Basica" | "Intermediaria" | "Avancada";
 export type UsageLevel = "Baixo" | "Moderado" | "Alto" | "Critico";
+export type FormulaStatus = "rascunho" | "em_revisao" | "validada" | "aprovada" | "arquivada";
 
 export interface Sector {
   id: SectorId;
@@ -53,8 +55,14 @@ export interface Formula {
   example: string;
   simpleExplanation: string;
   tags: string[];
+  status: FormulaStatus;
+  createdBy: string;
+  approvedBy?: string;
+  createdAt: string;
+  approvedAt?: string;
+  version: number;
+  technicalNotes?: string;
   isCustom?: boolean;
-  createdAt?: string;
 }
 
 export interface CalculationRecord {
@@ -66,6 +74,7 @@ export interface CalculationRecord {
   values: Record<string, string>;
   result: string;
   unit: string;
+  formulaStatus: FormulaStatus;
   status: "Validado" | "Rascunho" | "Revisao";
   operator: string;
   date: string;
@@ -74,9 +83,18 @@ export interface CalculationRecord {
 
 type BaseSector = Omit<Sector, "formulas">;
 
-type FormulaSeed = Omit<Formula, "sector" | "difficulty" | "usageCount"> & {
+type FormulaSeed = Omit<
+  Formula,
+  "sector" | "difficulty" | "usageCount" | "status" | "createdBy" | "approvedBy" | "createdAt" | "approvedAt" | "version"
+> & {
   difficulty?: Difficulty;
   usageCount?: number;
+  status?: FormulaStatus;
+  createdBy?: string;
+  approvedBy?: string;
+  createdAt?: string;
+  approvedAt?: string;
+  version?: number;
 };
 
 const variable = (name: string, label: string, unit: string, placeholder: string): FormulaVariable => ({
@@ -240,6 +258,18 @@ const baseSectors: BaseSector[] = [
     usageLevel: "Alto",
     color: "#84cc16",
     iconName: "BatteryCharging",
+  },
+  {
+    id: "elevadores_mistura_90",
+    name: "Elevadores e Mistura 90",
+    description:
+      "Setor técnico voltado aos cálculos de elevadores industriais, capacidade de transporte, tensões, correias, eixos, potência, redutores, acoplamentos e rolamentos, baseado no documento técnico Calculos Equipamentos Mistura 90.",
+    activeCalculations: 42,
+    health: 91,
+    trend: "+18%",
+    usageLevel: "Critico",
+    color: "#ff6a00",
+    iconName: "Factory",
   },
 ];
 
@@ -1823,9 +1853,361 @@ const formulaSeeds: FormulaSeed[] = [
   },
 ];
 
-export const formulas: Formula[] = formulaSeeds.map((seed, index) => ({
+const mistura90FormulaSeeds: FormulaSeed[] = [
+  {
+    id: "mistura90-capacidade-elevador",
+    name: "Capacidade do Elevador",
+    sectorId: "elevadores_mistura_90",
+    expression: "Q = (3600 * V * n * v * CF1 * CF2 * gamma) / e",
+    resultUnit: "m3/h",
+    description: "Calcula a capacidade volumetrica/produtiva do elevador por volume de caneca, fileiras, velocidade e fatores de enchimento.",
+    variables: [
+      variable("V", "Volume da caneca", "m3", "0.008"),
+      variable("n", "Numero de fileiras", "fileiras", "2"),
+      variable("v", "Velocidade da correia/corrente", "m/s", "1.2"),
+      variable("CF1", "Coeficiente de enchimento", "", "0.75"),
+      variable("CF2", "Coeficiente de homogeneidade", "", "0.9"),
+      variable("gamma", "Peso especifico do material", "t/m3", "0.85"),
+      variable("e", "Passo das canecas", "m", "0.305"),
+    ],
+    usageCount: 88,
+    example: "V=0.008, n=2, v=1.2, CF1=0.75, CF2=0.9, gamma=0.85 e e=0.305 geram a capacidade em m3/h.",
+    simpleExplanation: "A capacidade cresce com canecas maiores, mais fileiras e maior velocidade, corrigida pelos coeficientes do material.",
+    tags: ["mistura 90", "elevador", "capacidade", "canecas"],
+    technicalNotes: "Baseado no calculo de capacidade do elevador do documento Calculos Equipamentos Mistura 90.",
+  },
+  {
+    id: "mistura90-peso-metro-material",
+    name: "Peso por Metro de Material",
+    sectorId: "elevadores_mistura_90",
+    expression: "Pm = (1000 * n * gamma * V) / e",
+    resultUnit: "kg/m",
+    description: "Calcula o peso de material transportado por metro do elevador.",
+    variables: [variable("n", "Numero de fileiras", "fileiras", "2"), variable("gamma", "Peso especifico do material", "t/m3", "0.85"), variable("V", "Volume da caneca", "m3", "0.008"), variable("e", "Passo das canecas", "m", "0.305")],
+    usageCount: 82,
+    example: "Com duas fileiras, gamma=0.85 t/m3, V=0.008 m3 e e=0.305 m, o sistema estima kg de material por metro.",
+    simpleExplanation: "Transforma o volume das canecas e densidade do material em carga distribuida por metro.",
+    tags: ["mistura 90", "peso", "material"],
+  },
+  {
+    id: "mistura90-comprimento-correia-aberta",
+    name: "Comprimento da Correia ou Corrente Aberta",
+    sectorId: "elevadores_mistura_90",
+    expression: "Ca = pi * D + 2 * H",
+    resultUnit: "m",
+    description: "Estima o comprimento aberto da correia ou corrente considerando tambor e altura entre centros.",
+    variables: [variable("D", "Diametro do tambor", "m", "0.42"), variable("H", "Altura entre centros", "m", "18")],
+    usageCount: 80,
+    example: "D=0.42 m e H=18 m resultam em comprimento aberto aproximado da correia.",
+    simpleExplanation: "Soma duas pernas verticais com o contorno do tambor.",
+    tags: ["mistura 90", "correia", "corrente"],
+  },
+  {
+    id: "mistura90-numero-canecas",
+    name: "Numero de Canecas",
+    sectorId: "elevadores_mistura_90",
+    expression: "N1 = (1000 * Ca * n) / e",
+    resultUnit: "canecas",
+    description: "Calcula a quantidade aproximada de canecas montadas na correia ou corrente.",
+    variables: [variable("Ca", "Comprimento aberto", "m", "37.3"), variable("n", "Numero de fileiras", "fileiras", "2"), variable("e", "Passo das canecas", "mm", "305")],
+    usageCount: 79,
+    example: "Ca=37.3 m, n=2 e e=305 mm geram a quantidade de canecas instaladas.",
+    simpleExplanation: "Divide o comprimento total pelo passo e multiplica pelo numero de fileiras.",
+    tags: ["mistura 90", "canecas", "passo"],
+  },
+  {
+    id: "mistura90-tensao-estatica",
+    name: "Tensao Estatica",
+    sectorId: "elevadores_mistura_90",
+    expression: "Tp = (p * N1) / 2 + (pc * Ca) / 4 + (p1 * N1) / 4",
+    resultUnit: "kgf",
+    description: "Calcula a tensao estatica combinando peso de canecas, correia/corrente e carga transportada.",
+    variables: [variable("p", "Peso unitario da caneca", "kgf", "3.2"), variable("N1", "Numero de canecas", "canecas", "245"), variable("pc", "Peso da correia/corrente", "kgf/m", "8.5"), variable("Ca", "Comprimento aberto", "m", "37.3"), variable("p1", "Peso de material por caneca", "kgf", "5.4")],
+    usageCount: 75,
+    example: "Com pesos unitarios e comprimento aberto, a formula estima a tensao estatica total.",
+    simpleExplanation: "Reune as parcelas permanentes que tracionam o sistema parado.",
+    tags: ["mistura 90", "tensao", "estatica"],
+  },
+  {
+    id: "mistura90-tensao-efetiva-carga",
+    name: "Tensao Efetiva por Carga",
+    sectorId: "elevadores_mistura_90",
+    expression: "Te = ((H + 12 * D) * p1) / e",
+    resultUnit: "kgf",
+    description: "Calcula tensao efetiva pela carga elevada e parcela adicional associada ao tambor.",
+    variables: [variable("H", "Altura de elevacao", "m", "18"), variable("D", "Diametro do tambor", "m", "0.42"), variable("p1", "Peso de material por caneca", "kgf", "5.4"), variable("e", "Passo das canecas", "m", "0.305")],
+    usageCount: 72,
+    example: "H=18 m, D=0.42 m, p1=5.4 kgf e e=0.305 m geram tensao efetiva.",
+    simpleExplanation: "Aumenta com altura, diametro de referencia e carga por caneca.",
+    tags: ["mistura 90", "tensao efetiva", "carga"],
+  },
+  {
+    id: "mistura90-tensao-efetiva-canecas",
+    name: "Tensao Efetiva por Numero de Canecas",
+    sectorId: "elevadores_mistura_90",
+    expression: "Te = (0.8 * p1 * N * (H + Ho)) / H",
+    resultUnit: "kgf",
+    description: "Calcula tensao efetiva usando numero de canecas carregadas e altura equivalente.",
+    variables: [variable("p1", "Peso de material por caneca", "kgf", "5.4"), variable("N", "Numero de canecas", "canecas", "245"), variable("H", "Altura de elevacao", "m", "18"), variable("Ho", "Altura complementar", "m", "1.2")],
+    usageCount: 70,
+    example: "p1=5.4, N=245, H=18 e Ho=1.2 fornecem tensao efetiva por canecas.",
+    simpleExplanation: "Considera a fracao util de carga distribuida pelas canecas do elevador.",
+    tags: ["mistura 90", "canecas", "tensao efetiva"],
+  },
+  {
+    id: "mistura90-tensao-maxima",
+    name: "Tensao Maxima",
+    sectorId: "elevadores_mistura_90",
+    expression: "Tm = (1 + k) * Te",
+    resultUnit: "kgf",
+    description: "Aplica fator dinamico sobre a tensao efetiva para obter tensao maxima de projeto.",
+    variables: [variable("k", "Fator adicional/dinamico", "", "0.25"), variable("Te", "Tensao efetiva", "kgf", "1800")],
+    usageCount: 76,
+    example: "k=0.25 e Te=1800 kgf resultam em Tm=2250 kgf.",
+    simpleExplanation: "A tensao maxima adiciona margem dinamica sobre a carga efetiva.",
+    tags: ["mistura 90", "tensao maxima", "projeto"],
+  },
+  {
+    id: "mistura90-fator-abracamento",
+    name: "Fator de Abracamento do Tambor",
+    sectorId: "elevadores_mistura_90",
+    expression: "K = 1 / (exp(0.0174 * angulo * mi) - 1)",
+    resultUnit: "",
+    description: "Calcula fator de abracamento pelo angulo de contato e coeficiente de atrito.",
+    variables: [variable("angulo", "Angulo de abracamento", "graus", "180"), variable("mi", "Coeficiente de atrito", "", "0.35")],
+    difficulty: "Avancada",
+    usageCount: 68,
+    example: "angulo=180 graus e mi=0.35 resultam no fator K para o tambor.",
+    simpleExplanation: "Quanto maior o contato e atrito, menor a necessidade de esticamento adicional.",
+    tags: ["mistura 90", "tambor", "abracamento"],
+  },
+  {
+    id: "mistura90-peso-esticador",
+    name: "Peso do Esticador por Gravidade",
+    sectorId: "elevadores_mistura_90",
+    expression: "Pe = K * Te",
+    resultUnit: "kgf",
+    description: "Calcula o peso requerido no esticador por gravidade.",
+    variables: [variable("K", "Fator de abracamento", "", "0.42"), variable("Te", "Tensao efetiva", "kgf", "1800")],
+    usageCount: 64,
+    example: "K=0.42 e Te=1800 kgf indicam Pe=756 kgf.",
+    simpleExplanation: "O esticador precisa compensar a tensao efetiva conforme o fator de contato.",
+    tags: ["mistura 90", "esticador", "gravidade"],
+  },
+  {
+    id: "mistura90-unidade-tensao-correia",
+    name: "Unidade de Tensao da Correia",
+    sectorId: "elevadores_mistura_90",
+    expression: "Ut = Tm / B",
+    resultUnit: "kgf/cm",
+    description: "Calcula tensao por unidade de largura da correia.",
+    variables: [variable("Tm", "Tensao maxima", "kgf", "2250"), variable("B", "Largura da correia", "cm", "45")],
+    usageCount: 66,
+    example: "Tm=2250 kgf e B=45 cm resultam em 50 kgf/cm.",
+    simpleExplanation: "Distribui a tensao total pela largura resistente da correia.",
+    tags: ["mistura 90", "correia", "tensao"],
+  },
+  {
+    id: "mistura90-numero-minimo-lonas",
+    name: "Numero Minimo de Lonas",
+    sectorId: "elevadores_mistura_90",
+    expression: "Nm = Ut / Tu",
+    resultUnit: "lonas",
+    description: "Estima o numero minimo de lonas pela tensao unitaria e resistencia por lona.",
+    variables: [variable("Ut", "Unidade de tensao", "kgf/cm", "50"), variable("Tu", "Tensao admissivel por lona", "kgf/cm", "12")],
+    usageCount: 63,
+    example: "Ut=50 e Tu=12 indicam necessidade minima de 4.17 lonas.",
+    simpleExplanation: "Divide a tensao requerida pela capacidade de cada lona.",
+    tags: ["mistura 90", "lonas", "correia"],
+  },
+  {
+    id: "mistura90-percentual-tensao-admissivel",
+    name: "Porcentagem da Tensao Admissivel",
+    sectorId: "elevadores_mistura_90",
+    expression: "TadPercent = (T1 * 100) / (Tu * B * NL)",
+    resultUnit: "%",
+    description: "Verifica quanto da tensao admissivel da correia esta sendo utilizado.",
+    variables: [variable("T1", "Tensao atuante", "kgf", "2250"), variable("Tu", "Tensao admissivel por lona", "kgf/cm", "12"), variable("B", "Largura da correia", "cm", "45"), variable("NL", "Numero de lonas", "lonas", "5")],
+    usageCount: 62,
+    example: "T1=2250, Tu=12, B=45 e NL=5 indicam 83.33% da tensao admissivel.",
+    simpleExplanation: "Compara a tensao aplicada com a capacidade total da carcaça.",
+    tags: ["mistura 90", "tensao admissivel", "correia"],
+  },
+  {
+    id: "mistura90-momento-fletor-eixo-motriz",
+    name: "Momento Fletor do Eixo Motriz",
+    sectorId: "elevadores_mistura_90",
+    expression: "Mf = (P * a) / 2",
+    resultUnit: "kgf.cm",
+    description: "Calcula momento fletor no eixo motriz pela carga aplicada e braco.",
+    variables: [variable("P", "Carga aplicada", "kgf", "2600"), variable("a", "Distancia entre apoio e carga", "cm", "32")],
+    usageCount: 67,
+    example: "P=2600 kgf e a=32 cm resultam em Mf=41600 kgf.cm.",
+    simpleExplanation: "O momento cresce com a carga e com a distancia ate o apoio.",
+    tags: ["mistura 90", "eixo", "momento fletor"],
+  },
+  {
+    id: "mistura90-momento-torsor",
+    name: "Momento Torsor",
+    sectorId: "elevadores_mistura_90",
+    expression: "Mt = (N * 38 * D) / v",
+    resultUnit: "kgf.cm",
+    description: "Calcula momento torsor transmitido ao eixo a partir de potencia, diametro e velocidade.",
+    variables: [variable("N", "Potencia transmitida", "cv", "12.5"), variable("D", "Diametro do tambor", "m", "0.42"), variable("v", "Velocidade da correia", "m/s", "1.2")],
+    usageCount: 65,
+    example: "N=12.5 cv, D=0.42 m e v=1.2 m/s geram o momento torsor.",
+    simpleExplanation: "Representa o esforço de torção que o eixo precisa transmitir.",
+    tags: ["mistura 90", "eixo", "torcao"],
+  },
+  {
+    id: "mistura90-momento-ideal-composto",
+    name: "Momento Ideal/Composto",
+    sectorId: "elevadores_mistura_90",
+    expression: "Mi = sqrt((Fsf * Mf)^2 + (Fst * Mt)^2)",
+    resultUnit: "kgf.cm",
+    description: "Combina momento fletor e torsor com fatores de servico para dimensionar o eixo.",
+    variables: [variable("Fsf", "Fator de servico a flexao", "", "1.5"), variable("Mf", "Momento fletor", "kgf.cm", "41600"), variable("Fst", "Fator de servico a torcao", "", "1.2"), variable("Mt", "Momento torsor", "kgf.cm", "166")],
+    difficulty: "Avancada",
+    usageCount: 61,
+    example: "Com fatores de servico, Mf e Mt sao combinados por soma quadratica.",
+    simpleExplanation: "Gera um momento equivalente para avaliar o eixo sob flexao e torcao juntas.",
+    tags: ["mistura 90", "eixo", "momento composto"],
+  },
+  {
+    id: "mistura90-diametro-minimo-eixo-motriz",
+    name: "Diametro Minimo do Eixo Motriz",
+    sectorId: "elevadores_mistura_90",
+    expression: "d = cbrt((16 * Mi) / (pi * sigmaAdm))",
+    resultUnit: "cm",
+    description: "Dimensiona o diametro minimo do eixo motriz pelo momento composto e tensao admissivel.",
+    variables: [variable("Mi", "Momento ideal/composto", "kgf.cm", "62400"), variable("sigmaAdm", "Tensao admissivel", "kgf/cm2", "850")],
+    difficulty: "Avancada",
+    usageCount: 60,
+    example: "Mi=62400 kgf.cm e sigmaAdm=850 kgf/cm2 resultam em diametro minimo do eixo.",
+    simpleExplanation: "Raiz cubica relaciona momento resistente e tensao admissivel do material.",
+    tags: ["mistura 90", "eixo motriz", "diametro"],
+  },
+  {
+    id: "mistura90-diametro-minimo-eixo-movido",
+    name: "Diametro Minimo do Eixo Movido",
+    sectorId: "elevadores_mistura_90",
+    expression: "d = cbrt((32 * Mf * Fsf) / (pi * sigmaAdm))",
+    resultUnit: "cm",
+    description: "Dimensiona eixo movido considerando momento fletor e fator de servico.",
+    variables: [variable("Mf", "Momento fletor", "kgf.cm", "41600"), variable("Fsf", "Fator de servico a flexao", "", "1.5"), variable("sigmaAdm", "Tensao admissivel", "kgf/cm2", "850")],
+    difficulty: "Avancada",
+    usageCount: 58,
+    example: "Mf=41600, Fsf=1.5 e sigmaAdm=850 definem o diametro minimo.",
+    simpleExplanation: "Usa flexao corrigida para estimar a seção resistente necessaria.",
+    tags: ["mistura 90", "eixo movido", "diametro"],
+  },
+  {
+    id: "mistura90-flecha-maxima-eixo",
+    name: "Flecha Maxima do Eixo",
+    sectorId: "elevadores_mistura_90",
+    expression: "f = (4 * P * Ks * (L - C) * (2 * L^2 + 2 * L * C - C^2)) / (3 * pi * E * d^4)",
+    resultUnit: "cm",
+    description: "Calcula a flecha maxima do eixo para verificacao de rigidez.",
+    variables: [variable("P", "Carga aplicada", "kgf", "2600"), variable("Ks", "Fator de rigidez/servico", "", "1"), variable("L", "Distancia entre apoios", "cm", "110"), variable("C", "Distancia ate carga", "cm", "32"), variable("E", "Modulo de elasticidade", "kgf/cm2", "2100000"), variable("d", "Diametro do eixo", "cm", "7")],
+    difficulty: "Avancada",
+    usageCount: 56,
+    example: "Com carga, vao e diametro definidos, a formula calcula a deflexao maxima.",
+    simpleExplanation: "A flecha cai muito quando o diametro do eixo aumenta.",
+    tags: ["mistura 90", "flecha", "eixo"],
+  },
+  {
+    id: "mistura90-potencia-motor",
+    name: "Potencia do Motor",
+    sectorId: "elevadores_mistura_90",
+    expression: "N = (v * Pm * n * (H + 7 * D)) / (75 * eta)",
+    resultUnit: "cv",
+    description: "Calcula potencia requerida do motor para elevar a carga do sistema.",
+    variables: [variable("v", "Velocidade da correia", "m/s", "1.2"), variable("Pm", "Peso por metro de material", "kgf/m", "44.6"), variable("n", "Numero de fileiras", "fileiras", "2"), variable("H", "Altura de elevacao", "m", "18"), variable("D", "Diametro do tambor", "m", "0.42"), variable("eta", "Rendimento global", "", "0.82")],
+    usageCount: 70,
+    example: "v=1.2, Pm=44.6, n=2, H=18, D=0.42 e eta=0.82 geram potencia em cv.",
+    simpleExplanation: "Potencia aumenta com velocidade, peso transportado e altura de elevacao.",
+    tags: ["mistura 90", "motor", "potencia"],
+  },
+  {
+    id: "mistura90-rotacao-saida-redutor",
+    name: "Rotacao de Saida do Redutor",
+    sectorId: "elevadores_mistura_90",
+    expression: "rs = (V * 60) / (D * pi)",
+    resultUnit: "rpm",
+    description: "Calcula a rotacao de saida necessaria no redutor para obter velocidade linear.",
+    variables: [variable("V", "Velocidade linear", "m/s", "1.2"), variable("D", "Diametro do tambor", "m", "0.42")],
+    usageCount: 64,
+    example: "V=1.2 m/s e D=0.42 m geram rpm de saida do redutor.",
+    simpleExplanation: "Converte velocidade da correia em rotacao do tambor.",
+    tags: ["mistura 90", "redutor", "rpm"],
+  },
+  {
+    id: "mistura90-reducao-redutor",
+    name: "Reducao do Redutor",
+    sectorId: "elevadores_mistura_90",
+    expression: "R = Rm / rs",
+    resultUnit: ":1",
+    description: "Calcula relacao de reducao entre rotacao do motor e saida requerida.",
+    variables: [variable("Rm", "Rotacao do motor", "rpm", "1750"), variable("rs", "Rotacao de saida", "rpm", "54.6")],
+    usageCount: 62,
+    example: "Rm=1750 rpm e rs=54.6 rpm indicam reducao de 32:1.",
+    simpleExplanation: "Mostra quanto o redutor precisa reduzir a rotacao do motor.",
+    tags: ["mistura 90", "redutor", "reducao"],
+  },
+  {
+    id: "mistura90-momento-equivalente-acoplamento",
+    name: "Momento Equivalente do Acoplamento",
+    sectorId: "elevadores_mistura_90",
+    expression: "Meq = (C * N * Fs) / n",
+    resultUnit: "kgf.m",
+    description: "Dimensiona momento equivalente para selecao de acoplamento.",
+    variables: [variable("C", "Constante do acoplamento", "", "716.2"), variable("N", "Potencia", "cv", "12.5"), variable("Fs", "Fator de servico", "", "1.5"), variable("n", "Rotacao", "rpm", "54.6")],
+    usageCount: 57,
+    example: "C=716.2, N=12.5, Fs=1.5 e n=54.6 geram momento equivalente.",
+    simpleExplanation: "Corrige o torque de trabalho para escolher um acoplamento robusto.",
+    tags: ["mistura 90", "acoplamento", "momento"],
+  },
+  {
+    id: "mistura90-capacidade-dinamica-rolamento",
+    name: "Capacidade Dinamica do Rolamento",
+    sectorId: "elevadores_mistura_90",
+    expression: "C = P * cbrt((60 * n * L10h) / 1000000)",
+    resultUnit: "N",
+    description: "Calcula capacidade dinamica requerida do rolamento pela vida nominal L10h.",
+    variables: [variable("P", "Carga dinamica equivalente", "N", "18000"), variable("n", "Rotacao", "rpm", "54.6"), variable("L10h", "Vida nominal", "h", "30000")],
+    difficulty: "Avancada",
+    usageCount: 55,
+    example: "P=18000 N, n=54.6 rpm e L10h=30000 h geram a capacidade dinamica requerida.",
+    simpleExplanation: "Maior carga, rotacao ou vida requerida aumentam a capacidade do rolamento.",
+    tags: ["mistura 90", "rolamento", "L10h"],
+  },
+  {
+    id: "mistura90-espessura-costado-tambor",
+    name: "Espessura do Costado do Tambor",
+    sectorId: "elevadores_mistura_90",
+    expression: "s = sqrt((2 * Kc * 3 * P * D) / sigmaC)",
+    resultUnit: "cm",
+    description: "Calcula espessura minima do costado do tambor conforme carga, diametro e tensao admissivel.",
+    variables: [variable("Kc", "Coeficiente do costado", "", "1.2"), variable("P", "Carga aplicada", "kgf", "2600"), variable("D", "Diametro do tambor", "cm", "42"), variable("sigmaC", "Tensao admissivel do costado", "kgf/cm2", "900")],
+    difficulty: "Avancada",
+    usageCount: 54,
+    example: "Kc=1.2, P=2600 kgf, D=42 cm e sigmaC=900 kgf/cm2 fornecem a espessura minima.",
+    simpleExplanation: "Dimensiona a chapa do tambor para resistir aos esforcos do elevador.",
+    tags: ["mistura 90", "tambor", "costado"],
+  },
+];
+
+const allFormulaSeeds = [...formulaSeeds, ...mistura90FormulaSeeds];
+
+export const formulas: Formula[] = allFormulaSeeds.map((seed, index) => ({
   difficulty: "Intermediaria",
   usageCount: Math.max(18, 120 - index),
+  status: "aprovada",
+  createdBy: "i9TMG Engenharia",
+  approvedBy: "Administrador i9TMG",
+  createdAt: "2026-04-24T00:00:00.000Z",
+  approvedAt: "2026-04-24T00:00:00.000Z",
+  version: 1,
   ...seed,
   sector: sectorNameById[seed.sectorId],
 }));
@@ -1845,6 +2227,7 @@ export const calculationsHistory: CalculationRecord[] = [
     values: { F: "150", r: "0.30" },
     result: "45.0000",
     unit: "N.m",
+    formulaStatus: "aprovada",
     status: "Validado",
     operator: "Eng. Marina",
     date: "24/04/2026 14:32",
@@ -1859,6 +2242,7 @@ export const calculationsHistory: CalculationRecord[] = [
     values: { I: "25", R: "0.019", L: "50" },
     result: "47.5000",
     unit: "V",
+    formulaStatus: "aprovada",
     status: "Revisao",
     operator: "Tec. Bruno",
     date: "24/04/2026 11:15",
@@ -1873,6 +2257,7 @@ export const calculationsHistory: CalculationRecord[] = [
     values: { A: "0.05", v: "2.5" },
     result: "0.1250",
     unit: "m3/s",
+    formulaStatus: "aprovada",
     status: "Validado",
     operator: "Eng. Caio",
     date: "23/04/2026 16:45",
@@ -1887,6 +2272,7 @@ export const calculationsHistory: CalculationRecord[] = [
     values: { D: "92", P: "95", Q: "99.5" },
     result: "87.0300",
     unit: "%",
+    formulaStatus: "aprovada",
     status: "Validado",
     operator: "Coord. Paula",
     date: "23/04/2026 09:20",
@@ -1901,6 +2287,7 @@ export const calculationsHistory: CalculationRecord[] = [
     values: { Tscan: "18", Tlim: "50" },
     result: "36.0000",
     unit: "%",
+    formulaStatus: "aprovada",
     status: "Validado",
     operator: "Eng. Marina",
     date: "22/04/2026 15:00",
@@ -1915,6 +2302,7 @@ export const calculationsHistory: CalculationRecord[] = [
     values: { Toper: "2400", Falhas: "6" },
     result: "400.0000",
     unit: "h",
+    formulaStatus: "aprovada",
     status: "Validado",
     operator: "Tec. Bruno",
     date: "21/04/2026 10:30",
@@ -1929,6 +2317,7 @@ export const calculationsHistory: CalculationRecord[] = [
     values: { USL: "10.2", LSL: "9.8", media: "10.02", sigma: "0.05" },
     result: "1.2000",
     unit: "",
+    formulaStatus: "validada",
     status: "Revisao",
     operator: "Analista Joao",
     date: "20/04/2026 08:40",

@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import type { ReactNode } from "react";
-import { Copy, Edit3, Eye, FlaskConical, Plus, Save, Search, Sparkles, Trash2, Variable } from "lucide-react";
+import { Archive, CheckCircle2, Copy, Edit3, Eye, FlaskConical, Plus, Save, Search, Send, Sparkles, Trash2, Variable } from "lucide-react";
 import { toast } from "sonner";
 import { FormulaCard } from "@/components/FormulaCard";
 import { Badge } from "@/components/ui/badge";
@@ -25,9 +25,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useAuth } from "@/contexts/AuthContext";
 import { useIndustrialWorkspace } from "@/contexts/IndustrialWorkspaceContext";
 import { formatFormulaForDisplay, validateFormula } from "@/lib/formula-engine";
-import type { Difficulty, Formula, SectorId } from "@/lib/industrial-data";
+import type { Difficulty, Formula, FormulaStatus, SectorId } from "@/lib/industrial-data";
+import { adminOnlyMessage, canApproveFormula, canCreateSector, canEditFormula } from "@/lib/permissions";
 
 interface VariableDraft {
   id: string;
@@ -45,7 +47,9 @@ interface FormulaDraft {
   description: string;
   example: string;
   simpleExplanation: string;
+  technicalNotes: string;
   difficulty: Difficulty;
+  status: FormulaStatus;
   tags: string;
   variables: VariableDraft[];
 }
@@ -58,15 +62,35 @@ const emptyDraft: FormulaDraft = {
   description: "",
   example: "",
   simpleExplanation: "",
+  technicalNotes: "",
   difficulty: "Intermediaria",
+  status: "rascunho",
   tags: "",
   variables: [{ id: "1", name: "", label: "", unit: "", placeholder: "" }],
 };
 
 const variableSuggestions = ["F", "r", "P", "Q", "T", "V", "I", "FP", "eta", "rho", "sigma", "A", "L", "D", "t", "n"];
 
+const statusLabels: Record<FormulaStatus, string> = {
+  rascunho: "Rascunho",
+  em_revisao: "Em revisao",
+  validada: "Validada",
+  aprovada: "Aprovada",
+  arquivada: "Arquivada",
+};
+
 export default function Formulas() {
-  const { formulas, sectors, saveFormula, duplicateFormula, removeFormula, isFavorite, toggleFavorite } = useIndustrialWorkspace();
+  const { role, user } = useAuth();
+  const {
+    formulas,
+    sectors,
+    saveFormula,
+    duplicateFormula,
+    removeFormula,
+    updateFormulaStatus,
+    isFavorite,
+    toggleFavorite,
+  } = useIndustrialWorkspace();
   const [search, setSearch] = useState("");
   const [sectorFilter, setSectorFilter] = useState<SectorId | "todos">("todos");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -120,7 +144,9 @@ export default function Formulas() {
       description: formula.description,
       example: formula.example,
       simpleExplanation: formula.simpleExplanation,
+      technicalNotes: formula.technicalNotes || "",
       difficulty: formula.difficulty,
+      status: formula.status,
       tags: formula.tags.join(", "),
       variables: formula.variables.map((variable, index) => ({
         id: `${formula.id}-${index}`,
@@ -174,6 +200,12 @@ export default function Formulas() {
     }
 
     const existing = formulas.find((item) => item.id === editingId);
+    if (existing && !canEditFormula(role, existing)) {
+      toast.error(adminOnlyMessage());
+      return;
+    }
+
+    const nextStatus = canApproveFormula(role) ? draft.status : "rascunho";
     const formula: Formula = {
       id: editingId || `custom-${Date.now()}`,
       name: draft.name.trim(),
@@ -184,10 +216,16 @@ export default function Formulas() {
       description: draft.description.trim(),
       example: draft.example.trim(),
       simpleExplanation: draft.simpleExplanation.trim(),
+      technicalNotes: draft.technicalNotes.trim(),
       difficulty: draft.difficulty,
+      status: nextStatus,
+      createdBy: existing?.createdBy || user?.name || "Operador",
+      approvedBy: nextStatus === "validada" || nextStatus === "aprovada" ? user?.name || "Administrador i9TMG" : existing?.approvedBy,
+      createdAt: existing?.createdAt || new Date().toISOString(),
+      approvedAt: nextStatus === "validada" || nextStatus === "aprovada" ? new Date().toISOString() : existing?.approvedAt,
+      version: existing ? existing.version + 1 : 1,
       usageCount: existing?.usageCount || 0,
       isCustom: existing?.isCustom ?? !editingId,
-      createdAt: existing?.createdAt || new Date().toISOString(),
       tags: draft.tags
         .split(",")
         .map((tag) => tag.trim())
@@ -212,6 +250,31 @@ export default function Formulas() {
       return;
     }
     toast.error("Formulas nativas ficam protegidas. Duplique antes de alterar livremente.");
+  };
+
+  const setStatus = (formula: Formula, status: FormulaStatus) => {
+    if (!canApproveFormula(role) && status !== "em_revisao") {
+      toast.error(adminOnlyMessage());
+      return;
+    }
+    updateFormulaStatus(formula.id, status, user?.name);
+    toast.success(`Status atualizado para ${statusLabels[status]}.`);
+  };
+
+  const guardedEdit = (formula: Formula) => {
+    if (!canEditFormula(role, formula)) {
+      toast.error(adminOnlyMessage());
+      return;
+    }
+    openEditDialog(formula);
+  };
+
+  const requestNewSector = () => {
+    if (!canCreateSector(role)) {
+      toast.error(adminOnlyMessage());
+      return;
+    }
+    toast.info("Criacao de setores customizados reservada ao painel administrativo.");
   };
 
   const handleDuplicate = (id: string) => {
@@ -274,6 +337,10 @@ export default function Formulas() {
               <Metric label="Variaveis" value={formulas.reduce((total, formula) => total + formula.variables.length, 0)} />
               <Metric label="Custom" value={formulas.filter((formula) => formula.isCustom).length} />
             </div>
+            <Button type="button" variant="outline" onClick={requestNewSector} className="w-full border-border bg-muted/25 text-foreground">
+              <Plus className="h-4 w-4" />
+              Novo setor
+            </Button>
             <div className="rounded-lg border border-primary/25 bg-primary/10 p-4">
               <div className="flex items-start gap-3">
                 <Sparkles className="mt-0.5 h-4 w-4 text-primary" />
@@ -303,7 +370,25 @@ export default function Formulas() {
                   <Button type="button" variant="outline" size="sm" onClick={() => handleDuplicate(formula.id)} className="border-border bg-muted/25 text-foreground">
                     <Copy className="h-4 w-4" />
                   </Button>
-                  <Button type="button" variant="outline" size="sm" onClick={() => openEditDialog(formula)} className="border-border bg-muted/25 text-foreground">
+                  <Button type="button" variant="outline" size="sm" onClick={() => setStatus(formula, "em_revisao")} className="border-border bg-muted/25 text-foreground">
+                    <Send className="h-4 w-4" />
+                    Revisao
+                  </Button>
+                  {canApproveFormula(role) && (
+                    <>
+                      <Button type="button" variant="outline" size="sm" onClick={() => setStatus(formula, "validada")} className="border-info/30 bg-info/10 text-info">
+                        <CheckCircle2 className="h-4 w-4" />
+                        Validar
+                      </Button>
+                      <Button type="button" variant="outline" size="sm" onClick={() => setStatus(formula, "aprovada")} className="border-success/30 bg-success/10 text-success">
+                        Aprovar
+                      </Button>
+                      <Button type="button" variant="outline" size="sm" onClick={() => setStatus(formula, "arquivada")} className="border-destructive/30 bg-destructive/10 text-destructive">
+                        <Archive className="h-4 w-4" />
+                      </Button>
+                    </>
+                  )}
+                  <Button type="button" variant="outline" size="sm" onClick={() => guardedEdit(formula)} className="border-border bg-muted/25 text-foreground">
                     <Edit3 className="h-4 w-4" />
                     Editar
                   </Button>
@@ -368,6 +453,20 @@ export default function Formulas() {
                       </SelectContent>
                     </Select>
                   </Field>
+                  <Field label="Status">
+                    <Select value={draft.status} onValueChange={(value) => updateDraft("status", value as FormulaStatus)} disabled={!canApproveFormula(role)}>
+                      <SelectTrigger className="border-border bg-muted/25 text-foreground">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(statusLabels).map(([value, label]) => (
+                          <SelectItem key={value} value={value}>
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </Field>
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-[1fr_160px]">
@@ -387,6 +486,10 @@ export default function Formulas() {
                     <Textarea value={draft.simpleExplanation} onChange={(event) => updateDraft("simpleExplanation", event.target.value)} placeholder="Explique em linguagem direta para o operador." className="min-h-[104px] border-border bg-muted/25 text-foreground" />
                   </Field>
                 </div>
+
+                <Field label="Observacoes tecnicas">
+                  <Textarea value={draft.technicalNotes} onChange={(event) => updateDraft("technicalNotes", event.target.value)} placeholder="Normas, premissas, restricoes e criterios de aplicacao." className="min-h-[86px] border-border bg-muted/25 text-foreground" />
+                </Field>
 
                 <div className="grid gap-4 md:grid-cols-[1fr_260px]">
                   <Field label="Exemplo preenchido" required error={submitted && !draft.example}>

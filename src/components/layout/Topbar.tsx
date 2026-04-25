@@ -1,13 +1,13 @@
-import { Bell, Search, User } from "lucide-react";
+import { Bell, LogOut, Search, User } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { useIndustrialWorkspace } from "@/contexts/IndustrialWorkspaceContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function Topbar() {
   const [searchFocused, setSearchFocused] = useState(false);
   const [globalSearch, setGlobalSearch] = useState("");
-  const { userName } = useIndustrialWorkspace();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
 
   return (
@@ -55,9 +55,21 @@ export function Topbar() {
           <div className="flex h-7 w-7 items-center justify-center rounded-full border border-primary/30 bg-primary/20">
             <User className="h-3.5 w-3.5 text-primary" />
           </div>
-          <span className="hidden max-w-32 truncate text-xs font-medium text-muted-foreground lg:inline">
-            {userName || "Engenharia"}
+          <span className="hidden max-w-36 truncate text-xs font-medium text-muted-foreground lg:inline">
+            {user?.name || "Engenharia"}
           </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            logout();
+            navigate("/login", { replace: true });
+          }}
+          className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+          title="Sair"
+        >
+          <LogOut className="h-4 w-4" />
         </button>
       </div>
     </header>

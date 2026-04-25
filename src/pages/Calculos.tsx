@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Flame, Search, SlidersHorizontal, Star } from "lucide-react";
+import { AlertTriangle, Flame, Search, SlidersHorizontal, Star } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { CalculationPanel } from "@/components/CalculationPanel";
 import { FormulaCard } from "@/components/FormulaCard";
@@ -9,12 +9,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useAuth } from "@/contexts/AuthContext";
 import { useIndustrialWorkspace } from "@/contexts/IndustrialWorkspaceContext";
 import { evaluateFormula } from "@/lib/formula-engine";
 import type { Formula, SectorId } from "@/lib/industrial-data";
 
 export default function Calculos() {
   const { formulas, sectors, favoriteIds, isFavorite, toggleFavorite, recordCalculation } = useIndustrialWorkspace();
+  const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const [search, setSearch] = useState("");
   const [selectedSector, setSelectedSector] = useState<SectorId | "todos">("todos");
@@ -39,7 +41,7 @@ export default function Calculos() {
 
   const filteredFormulas = useMemo(() => {
     const term = search.toLowerCase();
-    return formulas.filter((formula) => {
+    return formulas.filter((formula) => formula.status !== "arquivada").filter((formula) => {
       const searchable = [
         formula.name,
         formula.sector,
@@ -54,7 +56,7 @@ export default function Calculos() {
       const matchSearch = searchable.includes(term);
       const matchSector = selectedSector === "todos" || formula.sectorId === selectedSector;
       return matchSearch && matchSector;
-    });
+    }).sort((a, b) => statusRank[b.status] - statusRank[a.status] || b.usageCount - a.usageCount);
   }, [formulas, search, selectedSector]);
 
   const favoriteFormulas = useMemo(
@@ -99,7 +101,7 @@ export default function Calculos() {
       const calculated = evaluateFormula(selectedFormula, values);
       const formatted = Number.isFinite(calculated) ? calculated.toFixed(4) : "0.0000";
       setResult(formatted);
-      recordCalculation(selectedFormula, values, formatted);
+      recordCalculation(selectedFormula, values, formatted, user?.name);
       setLoading(false);
     }, 420);
   };
@@ -138,6 +140,26 @@ export default function Calculos() {
           <Metric label="Formulas" value={formulas.length} />
           <Metric label="Setores" value={sectors.length} />
           <Metric label="Favoritos" value={favoriteIds.length} />
+        </div>
+      </section>
+
+      <section className="rounded-lg border border-primary/25 bg-primary/10 p-4">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Destaque tecnico</p>
+            <h2 className="mt-1 text-lg font-semibold text-foreground">Elevadores e Mistura 90</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Calculos de capacidade, correias, tensoes, eixos, potencia, redutores, acoplamentos e rolamentos.
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setSelectedSector("elevadores_mistura_90")}
+            className="border-primary/30 bg-background/30 text-foreground hover:bg-primary hover:text-primary-foreground"
+          >
+            Ver formulas do PDF
+          </Button>
         </div>
       </section>
 
@@ -236,28 +258,49 @@ export default function Calculos() {
           </CardContent>
         </Card>
 
-        <CalculationPanel
-          formula={selectedFormula}
-          values={values}
-          errors={errors}
-          loading={loading}
-          favorite={isFavorite(selectedFormula.id)}
-          onToggleFavorite={() => toggleFavorite(selectedFormula.id)}
-          onUseExample={fillExample}
-          onChange={(name, value) => {
-            setValues((current) => ({ ...current, [name]: value }));
-            setErrors((current) => ({ ...current, [name]: "" }));
-            setResult(null);
-          }}
-          onCalculate={handleCalculate}
-          onReset={handleReset}
-        />
+        <div className="flex min-h-0 flex-col gap-4">
+          <CalculationPanel
+            formula={selectedFormula}
+            values={values}
+            errors={errors}
+            loading={loading}
+            favorite={isFavorite(selectedFormula.id)}
+            onToggleFavorite={() => toggleFavorite(selectedFormula.id)}
+            onUseExample={fillExample}
+            onChange={(name, value) => {
+              setValues((current) => ({ ...current, [name]: value }));
+              setErrors((current) => ({ ...current, [name]: "" }));
+              setResult(null);
+            }}
+            onCalculate={handleCalculate}
+            onReset={handleReset}
+          />
+
+          {selectedFormula.status !== "validada" && selectedFormula.status !== "aprovada" && (
+            <div className="rounded-lg border border-warning/25 bg-warning/10 p-4">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="mt-0.5 h-4 w-4 text-warning" />
+                <p className="text-sm leading-relaxed text-muted-foreground">
+                  Esta formula esta com status {selectedFormula.status.replace("_", " ")}. Valide criterios internos antes de usar em campo.
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
 
         <StepByStepViewer formula={selectedFormula} values={values} result={result} />
       </section>
     </div>
   );
 }
+
+const statusRank = {
+  aprovada: 5,
+  validada: 4,
+  em_revisao: 3,
+  rascunho: 2,
+  arquivada: 1,
+};
 
 function FilterButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: string }) {
   return (

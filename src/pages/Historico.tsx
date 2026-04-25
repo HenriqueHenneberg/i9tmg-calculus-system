@@ -21,6 +21,14 @@ const statusClasses: Record<CalculationRecord["status"], string> = {
   Revisao: "border-primary/25 bg-primary/10 text-primary",
 };
 
+const formulaStatusLabels = {
+  rascunho: "Rascunho",
+  em_revisao: "Em revisao",
+  validada: "Validada",
+  aprovada: "Aprovada",
+  arquivada: "Arquivada",
+};
+
 export default function Historico() {
   const { history: calculationsHistory, sectors } = useIndustrialWorkspace();
   const [search, setSearch] = useState("");
@@ -52,7 +60,9 @@ export default function Historico() {
       cell: (row) => (
         <div>
           <p className="font-medium text-foreground">{row.formula}</p>
-          <p className="mt-1 text-xs text-muted-foreground">ID #{row.id}</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            ID #{row.id} - Formula {formulaStatusLabels[row.formulaStatus]}
+          </p>
         </div>
       ),
     },
@@ -227,6 +237,7 @@ export default function Historico() {
                 {highlighted.result} {highlighted.unit}
               </p>
               <p className="mt-1 text-xs text-muted-foreground">{highlighted.date}</p>
+              <p className="mt-1 text-xs text-muted-foreground">Formula {formulaStatusLabels[highlighted.formulaStatus]}</p>
             </div>
           </CardContent>
         </Card>

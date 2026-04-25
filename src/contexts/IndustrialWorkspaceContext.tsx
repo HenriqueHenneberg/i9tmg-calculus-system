@@ -26,9 +26,10 @@ interface IndustrialWorkspaceContextValue {
   saveFormula: (formula: Formula) => void;
   duplicateFormula: (formulaId: string) => Formula | null;
   removeFormula: (formulaId: string) => boolean;
+  updateFormulaStatus: (formulaId: string, status: Formula["status"], reviewer?: string) => void;
   toggleFavorite: (formulaId: string) => void;
   isFavorite: (formulaId: string) => boolean;
-  recordCalculation: (formula: Formula, values: Record<string, string>, result: string) => void;
+  recordCalculation: (formula: Formula, values: Record<string, string>, result: string, operator?: string) => void;
 }
 
 const storageKey = "tech-calculus-industrial-workspace-v2";
@@ -51,11 +52,14 @@ export function IndustrialWorkspaceProvider({ children }: { children: ReactNode 
   }, [workspace]);
 
   const formulas = useMemo(() => {
-    const catalogWithOverrides = catalogFormulas.map((formula) => workspace.formulaOverrides[formula.id] || formula);
-    return [...workspace.customFormulas, ...catalogWithOverrides];
+    const catalogWithOverrides = catalogFormulas.map((formula) => normalizeFormula(workspace.formulaOverrides[formula.id] || formula));
+    return [...workspace.customFormulas.map(normalizeFormula), ...catalogWithOverrides];
   }, [workspace.customFormulas, workspace.formulaOverrides]);
 
-  const history = useMemo(() => [...workspace.customHistory, ...calculationsHistory], [workspace.customHistory]);
+  const history = useMemo(
+    () => [...workspace.customHistory.map(normalizeRecord), ...calculationsHistory.map(normalizeRecord)],
+    [workspace.customHistory],
+  );
 
   const sectors = useMemo(() => {
     return catalogSectors.map((sector) => {
@@ -102,6 +106,11 @@ export function IndustrialWorkspaceProvider({ children }: { children: ReactNode 
       id: `custom-${Date.now()}`,
       name: `${source.name} - copia`,
       usageCount: 0,
+      status: "rascunho",
+      createdBy: "Operador",
+      approvedBy: undefined,
+      approvedAt: undefined,
+      version: source.version + 1,
       isCustom: true,
       createdAt: new Date().toISOString(),
     };
@@ -121,6 +130,21 @@ export function IndustrialWorkspaceProvider({ children }: { children: ReactNode 
     return true;
   };
 
+  const updateFormulaStatus = (formulaId: string, status: Formula["status"], reviewer = "Administrador i9TMG") => {
+    const formula = formulas.find((item) => item.id === formulaId);
+    if (!formula) return;
+
+    const reviewedFormula: Formula = {
+      ...formula,
+      status,
+      approvedBy: status === "aprovada" || status === "validada" ? reviewer : formula.approvedBy,
+      approvedAt: status === "aprovada" || status === "validada" ? new Date().toISOString() : formula.approvedAt,
+      version: formula.version || 1,
+    };
+
+    saveFormula(reviewedFormula);
+  };
+
   const toggleFavorite = (formulaId: string) => {
     setWorkspace((current) => ({
       ...current,
@@ -130,7 +154,7 @@ export function IndustrialWorkspaceProvider({ children }: { children: ReactNode 
     }));
   };
 
-  const recordCalculation = (formula: Formula, values: Record<string, string>, result: string) => {
+  const recordCalculation = (formula: Formula, values: Record<string, string>, result: string, operator?: string) => {
     setWorkspace((current) => ({
       ...current,
       customHistory: [
@@ -143,8 +167,9 @@ export function IndustrialWorkspaceProvider({ children }: { children: ReactNode 
           values,
           result,
           unit: formula.resultUnit,
+          formulaStatus: formula.status,
           status: "Validado",
-          operator: current.userName || "Operador",
+          operator: operator || current.userName || "Operador",
           date: formatDate(new Date()),
           isoDate: new Date().toISOString().slice(0, 10),
         },
@@ -163,6 +188,7 @@ export function IndustrialWorkspaceProvider({ children }: { children: ReactNode 
     saveFormula,
     duplicateFormula,
     removeFormula,
+    updateFormulaStatus,
     toggleFavorite,
     isFavorite: (formulaId) => workspace.favoriteIds.includes(formulaId),
     recordCalculation,
@@ -195,6 +221,25 @@ function readWorkspace(): StoredWorkspace {
   } catch {
     return initialWorkspace;
   }
+}
+
+function normalizeFormula(formula: Formula): Formula {
+  return {
+    status: "aprovada",
+    createdBy: "i9TMG Engenharia",
+    approvedBy: "Administrador i9TMG",
+    createdAt: "2026-04-24T00:00:00.000Z",
+    approvedAt: "2026-04-24T00:00:00.000Z",
+    version: 1,
+    ...formula,
+  };
+}
+
+function normalizeRecord(record: CalculationRecord): CalculationRecord {
+  return {
+    formulaStatus: "aprovada",
+    ...record,
+  };
 }
 
 function formatDate(date: Date) {

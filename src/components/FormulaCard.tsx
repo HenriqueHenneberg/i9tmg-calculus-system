@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import type { Formula } from "@/lib/industrial-data";
+import type { Formula, FormulaStatus } from "@/lib/industrial-data";
 
 interface FormulaCardProps {
   formula: Formula;
@@ -51,6 +51,9 @@ export function FormulaCard({ formula, selected, compact, favorite, onClick, chi
               <Badge variant="outline" className="border-border bg-muted/30 text-muted-foreground">
                 {formula.usageCount} usos
               </Badge>
+              <Badge variant="outline" className={statusClasses[formula.status]}>
+                {statusLabels[formula.status]}
+              </Badge>
               <span className="font-mono text-xs text-muted-foreground">{formula.expression}</span>
             </div>
             {!compact && formula.tags.length > 0 && (
@@ -79,3 +82,19 @@ export function FormulaCard({ formula, selected, compact, favorite, onClick, chi
     </button>
   );
 }
+
+const statusLabels: Record<FormulaStatus, string> = {
+  rascunho: "Rascunho",
+  em_revisao: "Em revisao",
+  validada: "Validada",
+  aprovada: "Aprovada",
+  arquivada: "Arquivada",
+};
+
+const statusClasses: Record<FormulaStatus, string> = {
+  rascunho: "border-muted-foreground/25 bg-muted/20 text-muted-foreground",
+  em_revisao: "border-warning/25 bg-warning/10 text-warning",
+  validada: "border-info/25 bg-info/10 text-info",
+  aprovada: "border-success/25 bg-success/10 text-success",
+  arquivada: "border-destructive/25 bg-destructive/10 text-destructive",
+};

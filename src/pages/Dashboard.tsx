@@ -45,6 +45,11 @@ export default function Dashboard() {
   const totalCalculations = sectorUsage.reduce((total, item) => total + item.calculos, 0);
   const totalFormulas = formulas.length;
   const topFormulas = [...formulas].sort((a, b) => b.usageCount - a.usageCount).slice(0, 6);
+  const validatedFormulas = formulas.filter((formula) => formula.status === "validada" || formula.status === "aprovada").length;
+  const pendingApproval = formulas.filter((formula) => formula.status === "em_revisao").length;
+  const mostUsedSector = [...sectors].sort((a, b) => b.activeCalculations - a.activeCalculations)[0];
+  const mistura90Sector = sectors.find((sector) => sector.id === "elevadores_mistura_90");
+  const mistura90Formulas = formulas.filter((formula) => formula.sectorId === "elevadores_mistura_90");
 
   return (
     <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-6">
@@ -80,15 +85,15 @@ export default function Dashboard() {
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <DashboardCard
           title="Total de calculos"
-          value={totalCalculations}
-          subtitle="Registros processados no mes"
+          value={history.length}
+          subtitle="Execucoes rastreadas no historico"
           icon={Calculator}
           trend={{ value: "+12%", positive: true }}
         />
         <DashboardCard
-          title="Setores ativos"
-          value={sectors.length}
-          subtitle="Areas com formulas habilitadas"
+          title="Formulas validadas"
+          value={validatedFormulas}
+          subtitle="Liberadas para uso operacional"
           icon={Layers}
           trend={{ value: "+4%", positive: true }}
           accent="blue"
@@ -96,20 +101,37 @@ export default function Dashboard() {
         <DashboardCard
           title="Formulas cadastradas"
           value={totalFormulas}
-          subtitle="Biblioteca tecnica operacional"
+          subtitle={`${pendingApproval} aguardando aprovacao`}
           icon={Database}
           trend={{ value: "+6 novas", positive: true }}
           accent="green"
         />
         <DashboardCard
-          title="Validacoes"
-          value="94%"
-          subtitle="Calculos aprovados sem retrabalho"
+          title="Setor mais usado"
+          value={mostUsedSector?.name || "-"}
+          subtitle={`${totalCalculations} calculos ativos no mes`}
           icon={ShieldCheck}
           trend={{ value: "+3%", positive: true }}
           accent="yellow"
         />
       </section>
+
+      {mistura90Sector && (
+        <section className="rounded-lg border border-primary/25 bg-primary/10 p-5 glow-card">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Setor especial</p>
+              <h2 className="mt-2 text-2xl font-semibold text-foreground">Elevadores e Mistura 90</h2>
+              <p className="mt-2 max-w-3xl text-sm leading-relaxed text-muted-foreground">{mistura90Sector.description}</p>
+            </div>
+            <div className="grid grid-cols-3 gap-3 text-center">
+              <Metric label="Formulas" value={mistura90Formulas.length} />
+              <Metric label="Uso" value={mistura90Sector.activeCalculations} />
+              <Metric label="Saude" value={`${mistura90Sector.health}%`} />
+            </div>
+          </div>
+        </section>
+      )}
 
       <section className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
         <Card className="gradient-industrial glow-card border-border/60">
@@ -271,6 +293,15 @@ export default function Dashboard() {
           </Table>
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+function Metric({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="rounded-lg border border-border/70 bg-background/35 px-4 py-3">
+      <p className="font-mono text-2xl font-semibold text-foreground">{value}</p>
+      <p className="text-xs text-muted-foreground">{label}</p>
     </div>
   );
 }

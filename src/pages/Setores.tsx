@@ -6,6 +6,7 @@ import {
   CalendarClock,
   Cpu,
   Droplets,
+  Factory,
   Gauge,
   ShieldCheck,
   SlidersHorizontal,
@@ -39,6 +40,7 @@ const sectorIcons = {
   qualidade: BadgeCheck,
   planejamento: CalendarClock,
   energia: BatteryCharging,
+  elevadores_mistura_90: Factory,
 };
 
 export default function Setores() {

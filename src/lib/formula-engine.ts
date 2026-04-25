@@ -17,6 +17,7 @@ export interface FormulaValidation {
 
 const functionArities: Record<string, number> = {
   abs: 1,
+  cbrt: 1,
   cos: 1,
   exp: 1,
   ln: 1,
@@ -354,6 +355,8 @@ function runFunction(name: string, args: number[]) {
   switch (name) {
     case "abs":
       return Math.abs(args[0]);
+    case "cbrt":
+      return Math.cbrt(args[0]);
     case "cos":
       return Math.cos(args[0]);
     case "exp":

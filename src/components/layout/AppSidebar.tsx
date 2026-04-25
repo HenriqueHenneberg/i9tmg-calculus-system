@@ -5,11 +5,14 @@ import {
   History,
   LayoutDashboard,
   Layers,
+  ShieldCheck,
   Settings,
 } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { BrandLogo } from "@/components/BrandLogo";
 import { NavLink } from "@/components/NavLink";
+import { useAuth } from "@/contexts/AuthContext";
+import { isAdmin } from "@/lib/permissions";
 import {
   Sidebar,
   SidebarContent,
@@ -35,8 +38,10 @@ const menuItems = [
 
 export function AppSidebar() {
   const { state, toggleSidebar } = useSidebar();
+  const { role } = useAuth();
   const collapsed = state === "collapsed";
   const location = useLocation();
+  const visibleItems = isAdmin(role) ? [...menuItems, { title: "Admin", url: "/admin", icon: ShieldCheck }] : menuItems;
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar">
@@ -48,7 +53,7 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => {
+              {visibleItems.map((item) => {
                 const isActive = location.pathname === item.url;
                 return (
                   <SidebarMenuItem key={item.title}>
