@@ -10,23 +10,23 @@ interface TechInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 export const TechInput = forwardRef<HTMLInputElement, TechInputProps>(
   ({ label, unit, error, className, ...props }, ref) => {
     return (
-      <div className="space-y-1.5">
-        <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+      <div className="min-w-0 space-y-1.5">
+        <label className="block text-xs font-medium uppercase tracking-wider text-muted-foreground">
           {label}
         </label>
         <div className={cn(
-          "flex items-center rounded-lg border bg-muted/30 transition-all duration-200",
+          "flex min-w-0 items-center rounded-lg border bg-muted/30 transition-all duration-200 hover:border-primary/25",
           "focus-within:border-primary focus-within:ring-1 focus-within:ring-primary/30",
           error ? "border-destructive" : "border-border",
           className
         )}>
           <input
             ref={ref}
-            className="flex-1 bg-transparent px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground outline-none font-mono"
+            className="min-w-0 flex-1 bg-transparent px-3 py-2.5 font-mono text-sm text-foreground outline-none placeholder:text-muted-foreground"
             {...props}
           />
           {unit && (
-            <span className="px-3 text-xs font-medium text-muted-foreground border-l border-border bg-muted/50 py-2.5 rounded-r-lg">
+            <span className="max-w-[6rem] shrink-0 truncate rounded-r-lg border-l border-border bg-muted/50 px-3 py-2.5 text-xs font-medium text-muted-foreground">
               {unit}
             </span>
           )}

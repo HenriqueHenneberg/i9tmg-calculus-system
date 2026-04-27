@@ -78,13 +78,13 @@ export function TechnicalAssistant({
         </div>
       </CardHeader>
 
-      <CardContent className="grid gap-4 p-4 md:p-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(300px,0.85fr)]">
+      <CardContent className="grid gap-4 p-4 md:p-5 xl:grid-cols-[minmax(0,1.08fr)_minmax(280px,0.92fr)]">
         <div className="min-w-0 space-y-4">
           <Textarea
             value={prompt}
             onChange={(event) => setPrompt(event.target.value)}
             placeholder="Descreva o calculo, equipamento ou valores. Ex: potencia motor H 18 D 0.42 v 1.2"
-            className="min-h-28 resize-none border-border bg-muted/20 text-foreground focus-visible:ring-primary/40"
+            className="min-h-[92px] resize-none border-border bg-muted/20 text-foreground transition-colors focus-visible:border-primary/50 focus-visible:ring-primary/40"
           />
 
           <div className="flex flex-wrap gap-2">
@@ -93,7 +93,7 @@ export function TechnicalAssistant({
                 key={example}
                 type="button"
                 onClick={() => setPrompt(example)}
-                className="rounded-md border border-border/70 bg-muted/20 px-3 py-1.5 text-left text-xs text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
+                className="rounded-md border border-border/70 bg-muted/20 px-3 py-1.5 text-left text-xs leading-relaxed text-muted-foreground transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary/10 hover:text-primary"
               >
                 {example}
               </button>
@@ -171,7 +171,7 @@ export function TechnicalAssistant({
                 type="button"
                 onClick={() => selectSuggestedFormula(suggestion.formula)}
                 className={cn(
-                  "group w-full rounded-lg border p-3 text-left transition-all hover:-translate-y-0.5",
+                  "group w-full rounded-lg border p-3 text-left transition-all hover:-translate-y-0.5 hover:shadow-[0_12px_34px_hsl(210_60%_4%/0.28)]",
                   suggestion.formula.id === selectedFormula?.id
                     ? "border-primary/35 bg-primary/10"
                     : "border-border/70 bg-background/30 hover:border-primary/30 hover:bg-muted/30",

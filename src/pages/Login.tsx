@@ -23,9 +23,9 @@ export default function Login() {
   const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname || "/";
 
   const helperText = useMemo(() => {
-    if (!normalizedUsername) return "Digite seu usuario para acessar o sistema.";
-    if (isAdminLogin) return "Usuario administrador detectado. Informe a senha administrativa.";
-    return "Login de operador: nenhuma senha e necessaria.";
+    if (!normalizedUsername) return "Identifique-se para abrir seu ambiente de calculos.";
+    if (isAdminLogin) return "Perfil restrito detectado. Informe sua senha.";
+    return "Perfil operacional pronto para acesso.";
   }, [isAdminLogin, normalizedUsername]);
 
   if (isAuthenticated) {
@@ -50,8 +50,9 @@ export default function Login() {
   };
 
   return (
-    <main className="flex min-h-screen overflow-x-hidden bg-background p-4 text-foreground sm:p-6">
+    <main className="relative flex min-h-screen overflow-x-hidden bg-background p-4 text-foreground sm:p-6">
       <div className="absolute inset-0 bg-[linear-gradient(135deg,#0A2540,#0d2f46_55%,#111827)]" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-44 border-b border-primary/10 bg-primary/5" />
       <div className="relative mx-auto grid w-full max-w-6xl items-center gap-6 lg:grid-cols-[1fr_430px]">
         <section className="hidden min-w-0 lg:block">
           <BrandLogo markClassName="h-20 w-20" />
@@ -90,7 +91,7 @@ export default function Login() {
                       setUsername(event.target.value);
                       if (event.target.value.trim() !== "adminadmin") setPassword("");
                     }}
-                    placeholder="adminadmin, operador, tecnico..."
+                    placeholder="Digite seu usuario"
                     className="h-11 border-border bg-muted/25 pl-9 text-foreground focus-visible:ring-primary/40"
                   />
                 </div>
@@ -103,7 +104,7 @@ export default function Login() {
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
                     type="password"
-                    placeholder="ladmin"
+                    placeholder="Senha"
                     className="h-11 border-border bg-muted/25 text-foreground focus-visible:ring-primary/40"
                   />
                 </div>

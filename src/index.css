@@ -56,22 +56,90 @@
 
     font-family: 'Inter', system-ui, sans-serif;
   }
+
+  :root[data-theme="light"] {
+    --background: 210 28% 96%;
+    --foreground: 211 72% 13%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 211 72% 13%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 211 72% 13%;
+
+    --secondary: 206 28% 91%;
+    --secondary-foreground: 211 72% 13%;
+
+    --muted: 205 28% 91%;
+    --muted-foreground: 207 18% 38%;
+
+    --accent: 205 36% 88%;
+    --accent-foreground: 211 72% 13%;
+
+    --border: 207 20% 78%;
+    --input: 207 20% 78%;
+
+    --sidebar-background: 210 73% 15%;
+    --sidebar-foreground: 210 20% 82%;
+    --sidebar-accent: 204 48% 18%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 204 30% 22%;
+
+    --surface: 0 0% 100%;
+    --surface-elevated: 206 28% 92%;
+  }
 }
 
 @layer base {
   * {
     @apply border-border;
+    min-width: 0;
   }
 
   body {
     @apply bg-background text-foreground antialiased;
-    background: #0A2540;
+    background: hsl(var(--background));
     overflow-x: hidden;
+  }
+
+  :root[data-compact="true"] main {
+    padding: 0.75rem;
+  }
+
+  @media (min-width: 768px) {
+    :root[data-compact="true"] main {
+      padding: 1rem;
+    }
+  }
+
+  :root[data-compact="true"] .glow-card [class*="p-5"] {
+    padding: 1rem;
   }
 
   #root {
     min-height: 100vh;
     overflow-x: hidden;
+  }
+
+  input,
+  textarea,
+  select,
+  button {
+    font: inherit;
+  }
+
+  p,
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  span,
+  td,
+  th,
+  code {
+    overflow-wrap: anywhere;
   }
 
   ::-webkit-scrollbar {
@@ -89,6 +157,16 @@
 
   ::-webkit-scrollbar-thumb:hover {
     background: hsl(var(--muted-foreground));
+  }
+}
+
+@layer components {
+  .interactive-surface {
+    @apply transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/35 hover:bg-muted/30;
+  }
+
+  .technical-code {
+    @apply max-w-full whitespace-normal break-words rounded-md border border-primary/20 bg-primary/10 px-3 py-2 font-mono text-xs leading-relaxed text-primary;
   }
 }
 
@@ -111,5 +189,10 @@
 
   .border-glow {
     border: 1px solid hsl(var(--primary) / 0.3);
+  }
+
+  .text-wrap-safe {
+    overflow-wrap: anywhere;
+    word-break: normal;
   }
 }

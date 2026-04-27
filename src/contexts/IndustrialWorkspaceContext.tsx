@@ -6,14 +6,29 @@ import {
   type CalculationRecord,
   type Formula,
   type Sector,
+  type SectorId,
 } from "@/lib/industrial-data";
 import { useAuth } from "@/contexts/AuthContext";
+
+export interface WorkspacePreferences {
+  precision: number;
+  compactMode: boolean;
+  notifications: boolean;
+  darkTheme: boolean;
+  autoSaveHistory: boolean;
+  defaultSector: SectorId;
+  jobTitle: string;
+  email: string;
+  unit: string;
+}
 
 interface StoredWorkspace {
   userName: string;
   favoriteIds: string[];
   favoriteIdsByUser: Record<string, string[]>;
+  preferences: WorkspacePreferences;
   customSectors: Sector[];
+  sectorOverrides: Record<string, Sector>;
   customFormulas: Formula[];
   formulaOverrides: Record<string, Formula>;
   customHistory: CalculationRecord[];
@@ -26,8 +41,10 @@ interface IndustrialWorkspaceContextValue {
   sectors: Sector[];
   history: CalculationRecord[];
   favoriteIds: string[];
+  preferences: WorkspacePreferences;
   saveSector: (sector: Sector) => void;
   saveFormula: (formula: Formula) => void;
+  updatePreferences: (preferences: Partial<WorkspacePreferences>) => void;
   duplicateFormula: (formulaId: string) => Formula | null;
   removeFormula: (formulaId: string) => boolean;
   updateFormulaStatus: (formulaId: string, status: Formula["status"], reviewer?: string) => void;
@@ -42,7 +59,19 @@ const initialWorkspace: StoredWorkspace = {
   userName: "",
   favoriteIds: ["torque", "oee", "potencia-trifasica", "mtbf"],
   favoriteIdsByUser: {},
+  preferences: {
+    precision: 4,
+    compactMode: false,
+    notifications: true,
+    darkTheme: true,
+    autoSaveHistory: true,
+    defaultSector: "mecanica",
+    jobTitle: "Engenharia Industrial",
+    email: "engenharia@i9tmg.com.br",
+    unit: "planta-01",
+  },
   customSectors: [],
+  sectorOverrides: {},
   customFormulas: [],
   formulaOverrides: {},
   customHistory: [],
@@ -60,6 +89,11 @@ export function IndustrialWorkspaceProvider({ children }: { children: ReactNode 
     window.localStorage.setItem(storageKey, JSON.stringify(workspace));
   }, [workspace]);
 
+  useEffect(() => {
+    document.documentElement.dataset.compact = String(workspace.preferences.compactMode);
+    document.documentElement.dataset.theme = workspace.preferences.darkTheme ? "dark" : "light";
+  }, [workspace.preferences.compactMode, workspace.preferences.darkTheme]);
+
   const formulas = useMemo(() => {
     const catalogWithOverrides = catalogFormulas.map((formula) => normalizeFormula(workspace.formulaOverrides[formula.id] || formula));
     return [...workspace.customFormulas.map(normalizeFormula), ...catalogWithOverrides];
@@ -71,7 +105,8 @@ export function IndustrialWorkspaceProvider({ children }: { children: ReactNode 
   );
 
   const sectors = useMemo(() => {
-    return [...catalogSectors, ...workspace.customSectors].map((sector) => {
+    const catalogWithOverrides = catalogSectors.map((sector) => workspace.sectorOverrides[sector.id] || sector);
+    return [...catalogWithOverrides, ...workspace.customSectors].map((sector) => {
       const formulaCount = formulas.filter((formula) => formula.sectorId === sector.id).length;
       const newExecutions = workspace.customHistory.filter((item) => item.sectorId === sector.id).length;
       return {
@@ -80,10 +115,21 @@ export function IndustrialWorkspaceProvider({ children }: { children: ReactNode 
         activeCalculations: sector.activeCalculations + newExecutions,
       };
     });
-  }, [formulas, workspace.customHistory, workspace.customSectors]);
+  }, [formulas, workspace.customHistory, workspace.customSectors, workspace.sectorOverrides]);
 
   const saveSector = (sector: Sector) => {
     setWorkspace((current) => {
+      const isCatalogSector = catalogSectors.some((item) => item.id === sector.id);
+      if (isCatalogSector) {
+        return {
+          ...current,
+          sectorOverrides: {
+            ...current.sectorOverrides,
+            [sector.id]: sector,
+          },
+        };
+      }
+
       const exists = current.customSectors.some((item) => item.id === sector.id);
       return {
         ...current,
@@ -154,6 +200,16 @@ export function IndustrialWorkspaceProvider({ children }: { children: ReactNode 
     return true;
   };
 
+  const updatePreferences = (preferences: Partial<WorkspacePreferences>) => {
+    setWorkspace((current) => ({
+      ...current,
+      preferences: {
+        ...current.preferences,
+        ...preferences,
+      },
+    }));
+  };
+
   const updateFormulaStatus = (formulaId: string, status: Formula["status"], reviewer = "Administrador i9TMG") => {
     const formula = formulas.find((item) => item.id === formulaId);
     if (!formula) return;
@@ -182,6 +238,8 @@ export function IndustrialWorkspaceProvider({ children }: { children: ReactNode 
   };
 
   const recordCalculation = (formula: Formula, values: Record<string, string>, result: string, operator?: string) => {
+    if (!workspace.preferences.autoSaveHistory) return;
+
     setWorkspace((current) => ({
       ...current,
       customHistory: [
@@ -212,8 +270,10 @@ export function IndustrialWorkspaceProvider({ children }: { children: ReactNode 
     sectors,
     history,
     favoriteIds: activeFavoriteIds,
+    preferences: workspace.preferences,
     saveSector,
     saveFormula,
+    updatePreferences,
     duplicateFormula,
     removeFormula,
     updateFormulaStatus,
@@ -243,7 +303,12 @@ function readWorkspace(): StoredWorkspace {
       ...parsed,
       favoriteIds: parsed.favoriteIds || initialWorkspace.favoriteIds,
       favoriteIdsByUser: parsed.favoriteIdsByUser || {},
+      preferences: {
+        ...initialWorkspace.preferences,
+        ...(parsed.preferences || {}),
+      },
       customSectors: parsed.customSectors || [],
+      sectorOverrides: parsed.sectorOverrides || {},
       customFormulas: parsed.customFormulas || [],
       formulaOverrides: parsed.formulaOverrides || {},
       customHistory: parsed.customHistory || [],

@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Archive, CheckCircle2, Copy, Edit3, Eye, FlaskConical, Plus, Save, Search, Send, Sparkles, Trash2, Variable } from "lucide-react";
 import { toast } from "sonner";
 import { FormulaCard } from "@/components/FormulaCard";
@@ -28,7 +29,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIndustrialWorkspace } from "@/contexts/IndustrialWorkspaceContext";
 import { evaluateFormula, formatFormulaForDisplay, validateFormula } from "@/lib/formula-engine";
-import type { Difficulty, Formula, FormulaStatus, SectorId } from "@/lib/industrial-data";
+import type { Difficulty, Formula, FormulaStatus, SectorId, UsageLevel } from "@/lib/industrial-data";
 import { adminOnlyMessage, canApproveFormula, canCreateFormula, canCreateSector, canEditFormula } from "@/lib/permissions";
 
 interface VariableDraft {
@@ -54,6 +55,13 @@ interface FormulaDraft {
   variables: VariableDraft[];
 }
 
+interface SectorDraft {
+  name: string;
+  description: string;
+  color: string;
+  usageLevel: UsageLevel;
+}
+
 const emptyDraft: FormulaDraft = {
   name: "",
   sectorId: "mecanica",
@@ -67,6 +75,13 @@ const emptyDraft: FormulaDraft = {
   status: "rascunho",
   tags: "",
   variables: [{ id: "1", name: "", label: "", unit: "", placeholder: "" }],
+};
+
+const emptySectorDraft: SectorDraft = {
+  name: "",
+  description: "",
+  color: "#ff6a00",
+  usageLevel: "Moderado",
 };
 
 const variableSuggestions = ["F", "r", "P", "Q", "T", "V", "I", "FP", "eta", "rho", "sigma", "A", "L", "D", "t", "n"];
@@ -91,13 +106,22 @@ export default function Formulas() {
     updateFormulaStatus,
     isFavorite,
   } = useIndustrialWorkspace();
+  const [searchParams] = useSearchParams();
   const admin = canApproveFormula(role);
   const [search, setSearch] = useState("");
   const [sectorFilter, setSectorFilter] = useState<SectorId | "todos">("todos");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<FormulaDraft>(emptyDraft);
+  const [sectorDialogOpen, setSectorDialogOpen] = useState(false);
+  const [sectorDraft, setSectorDraft] = useState<SectorDraft>(emptySectorDraft);
+  const [sectorSubmitted, setSectorSubmitted] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+
+  useEffect(() => {
+    const query = searchParams.get("q");
+    if (query) setSearch(query);
+  }, [searchParams]);
 
   const filteredItems = useMemo(() => {
     const term = search.toLowerCase();
@@ -316,22 +340,32 @@ export default function Formulas() {
       toast.error(adminOnlyMessage());
       return;
     }
-    const name = window.prompt("Nome do novo setor");
-    if (!name?.trim()) return;
-    const description = window.prompt("Descricao tecnica do setor") || "Setor personalizado criado pelo administrador.";
-    const id = `custom_${name.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "")}_${Date.now()}`;
+    setSectorDraft(emptySectorDraft);
+    setSectorSubmitted(false);
+    setSectorDialogOpen(true);
+  };
+
+  const saveNewSector = () => {
+    setSectorSubmitted(true);
+    if (!sectorDraft.name.trim()) {
+      toast.error("Informe o nome do setor.");
+      return;
+    }
+
+    const id = `custom_${slugify(sectorDraft.name)}_${Date.now()}`;
     saveSector({
       id,
-      name: name.trim(),
-      description,
+      name: sectorDraft.name.trim(),
+      description: sectorDraft.description.trim() || "Setor personalizado criado pelo administrador.",
       formulas: 0,
       activeCalculations: 0,
       health: 70,
       trend: "+0%",
-      usageLevel: "Moderado",
-      color: "#ff6a00",
+      usageLevel: sectorDraft.usageLevel,
+      color: sectorDraft.color,
       iconName: "Factory",
     });
+    setSectorDialogOpen(false);
     toast.success("Setor criado com sucesso.");
   };
 
@@ -433,21 +467,22 @@ export default function Formulas() {
                       </Button>
                       <Button type="button" variant="outline" size="sm" onClick={() => setStatus(formula, "em_revisao")} className="border-border bg-muted/25 text-foreground">
                         <Send className="h-4 w-4" />
-                        Revisao
+                        <span className="hidden sm:inline">Revisao</span>
                       </Button>
                       <Button type="button" variant="outline" size="sm" onClick={() => setStatus(formula, "validada")} className="border-info/30 bg-info/10 text-info">
                         <CheckCircle2 className="h-4 w-4" />
-                        Validar
+                        <span className="hidden sm:inline">Validar</span>
                       </Button>
                       <Button type="button" variant="outline" size="sm" onClick={() => setStatus(formula, "aprovada")} className="border-success/30 bg-success/10 text-success">
-                        Aprovar
+                        <CheckCircle2 className="h-4 w-4 sm:hidden" />
+                        <span className="hidden sm:inline">Aprovar</span>
                       </Button>
                       <Button type="button" variant="outline" size="sm" onClick={() => setStatus(formula, "arquivada")} className="border-destructive/30 bg-destructive/10 text-destructive">
                         <Archive className="h-4 w-4" />
                       </Button>
                       <Button type="button" variant="outline" size="sm" onClick={() => guardedEdit(formula)} className="border-border bg-muted/25 text-foreground">
                         <Edit3 className="h-4 w-4" />
-                        Editar
+                        <span className="hidden sm:inline">Editar</span>
                       </Button>
                     </>
                   ) : (
@@ -692,8 +727,81 @@ export default function Formulas() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={sectorDialogOpen} onOpenChange={setSectorDialogOpen}>
+        <DialogContent className="max-w-xl border-border bg-background text-foreground">
+          <DialogHeader>
+            <DialogTitle>Novo setor industrial</DialogTitle>
+            <DialogDescription>
+              Cadastre um setor para organizar formulas, filtros e rastreabilidade operacional.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4">
+            <Field label="Nome do setor" required error={sectorSubmitted && !sectorDraft.name.trim()}>
+              <Input
+                value={sectorDraft.name}
+                onChange={(event) => setSectorDraft((current) => ({ ...current, name: event.target.value }))}
+                placeholder="Ex: Linha de envase"
+                className="border-border bg-muted/25 text-foreground"
+              />
+            </Field>
+            <Field label="Descricao tecnica">
+              <Textarea
+                value={sectorDraft.description}
+                onChange={(event) => setSectorDraft((current) => ({ ...current, description: event.target.value }))}
+                placeholder="Explique o tipo de equipamento, processo ou area atendida."
+                className="min-h-[110px] border-border bg-muted/25 text-foreground"
+              />
+            </Field>
+            <div className="grid gap-4 sm:grid-cols-[1fr_120px]">
+              <Field label="Nivel de uso">
+                <Select
+                  value={sectorDraft.usageLevel}
+                  onValueChange={(usageLevel) => setSectorDraft((current) => ({ ...current, usageLevel: usageLevel as UsageLevel }))}
+                >
+                  <SelectTrigger className="border-border bg-muted/25 text-foreground">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Baixo">Baixo</SelectItem>
+                    <SelectItem value="Moderado">Moderado</SelectItem>
+                    <SelectItem value="Alto">Alto</SelectItem>
+                    <SelectItem value="Critico">Critico</SelectItem>
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field label="Cor">
+                <Input
+                  type="color"
+                  value={sectorDraft.color}
+                  onChange={(event) => setSectorDraft((current) => ({ ...current, color: event.target.value }))}
+                  className="h-10 border-border bg-muted/25 p-1"
+                />
+              </Field>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setSectorDialogOpen(false)} className="border-border bg-muted/25 text-foreground">
+              Cancelar
+            </Button>
+            <Button type="button" onClick={saveNewSector} className="bg-primary text-primary-foreground hover:bg-highlight-glow">
+              Criar setor
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
+}
+
+function slugify(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_|_$/g, "");
 }
 
 function Metric({ label, value }: { label: string; value: number }) {

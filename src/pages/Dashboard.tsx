@@ -307,7 +307,8 @@ export default function Dashboard() {
           </Button>
         </CardHeader>
         <CardContent className="p-0">
-          <Table>
+          <div className="w-full overflow-x-auto">
+          <Table className="min-w-[760px]">
             <TableHeader className="bg-muted/25">
               <TableRow className="hover:bg-transparent">
                 <TableHead>Formula</TableHead>
@@ -344,6 +345,7 @@ export default function Dashboard() {
               ))}
             </TableBody>
           </Table>
+          </div>
         </CardContent>
       </Card>
     </div>

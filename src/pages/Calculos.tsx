@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Flame, Search, SlidersHorizontal, Star } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
+import { toast } from "sonner";
 import { CalculationPanel } from "@/components/CalculationPanel";
 import { FormulaCard } from "@/components/FormulaCard";
 import { Mistura90Guide } from "@/components/Mistura90Guide";
@@ -18,7 +19,7 @@ import { rankFormulas } from "@/lib/industrial-assistant";
 import type { Formula, SectorId } from "@/lib/industrial-data";
 
 export default function Calculos() {
-  const { formulas, sectors, favoriteIds, isFavorite, toggleFavorite, recordCalculation } = useIndustrialWorkspace();
+  const { formulas, sectors, favoriteIds, isFavorite, toggleFavorite, recordCalculation, preferences } = useIndustrialWorkspace();
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const [search, setSearch] = useState("");
@@ -27,6 +28,7 @@ export default function Calculos() {
   const [values, setValues] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [result, setResult] = useState<string | null>(null);
+  const [calculationError, setCalculationError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -39,6 +41,32 @@ export default function Calculos() {
     const query = searchParams.get("q");
     if (query) setSearch(query);
   }, [searchParams]);
+
+  useEffect(() => {
+    const formulaId = searchParams.get("formula");
+    const sectorId = searchParams.get("sector") as SectorId | null;
+    const encodedValues = searchParams.get("values");
+
+    if (formulaId && formulas.some((formula) => formula.id === formulaId)) {
+      setSelectedFormulaId(formulaId);
+    }
+
+    if (sectorId && sectors.some((sector) => sector.id === sectorId)) {
+      setSelectedSector(sectorId);
+    }
+
+    if (encodedValues) {
+      try {
+        const parsed = JSON.parse(encodedValues) as Record<string, string>;
+        setValues(parsed);
+        setErrors({});
+        setResult(null);
+        setCalculationError(null);
+      } catch {
+        toast.error("Nao foi possivel recuperar os valores do historico.");
+      }
+    }
+  }, [formulas, sectors, searchParams]);
 
   const selectedFormula = formulas.find((formula) => formula.id === selectedFormulaId) || formulas[0];
 
@@ -94,30 +122,48 @@ export default function Calculos() {
     setValues({});
     setErrors({});
     setResult(null);
+    setCalculationError(null);
   };
 
   const handleCalculate = () => {
     if (!selectedFormula) return;
     const nextErrors: Record<string, string> = {};
+    const normalizedValues: Record<string, string> = {};
 
     selectedFormula.variables.forEach((variable) => {
       const value = values[variable.name];
-      if (!value) {
+      const parsed = parseTechnicalNumber(value);
+      if (!value || value.trim() === "") {
         nextErrors[variable.name] = "Campo obrigatorio";
-      } else if (Number.isNaN(Number.parseFloat(value))) {
+      } else if (!Number.isFinite(parsed)) {
         nextErrors[variable.name] = "Valor invalido";
+      } else {
+        normalizedValues[variable.name] = String(parsed);
       }
     });
 
     setErrors(nextErrors);
+    setCalculationError(null);
     if (Object.keys(nextErrors).length > 0) return;
 
     setLoading(true);
     window.setTimeout(() => {
-      const calculated = evaluateFormula(selectedFormula, values);
-      const formatted = Number.isFinite(calculated) ? calculated.toFixed(4) : "0.0000";
-      setResult(formatted);
-      recordCalculation(selectedFormula, values, formatted, user?.name);
+      try {
+        const calculated = evaluateFormula(selectedFormula, normalizedValues);
+        if (!Number.isFinite(calculated)) {
+          throw new Error("Resultado invalido. Verifique divisao por zero, valores negativos em raiz ou dados incoerentes.");
+        }
+
+        const formatted = calculated.toFixed(preferences.precision);
+        setValues((current) => ({ ...current, ...normalizedValues }));
+        setResult(formatted);
+        recordCalculation(selectedFormula, normalizedValues, formatted, user?.name);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Nao foi possivel concluir o calculo.";
+        setResult(null);
+        setCalculationError(message);
+        toast.error(message);
+      }
       setLoading(false);
     }, 420);
   };
@@ -126,6 +172,7 @@ export default function Calculos() {
     setValues({});
     setErrors({});
     setResult(null);
+    setCalculationError(null);
   };
 
   const fillExample = () => {
@@ -135,6 +182,7 @@ export default function Calculos() {
     );
     setErrors({});
     setResult(null);
+    setCalculationError(null);
   };
 
   const applyDetectedValues = (nextValues: Record<string, string>) => {
@@ -147,6 +195,7 @@ export default function Calculos() {
       return nextErrors;
     });
     setResult(null);
+    setCalculationError(null);
   };
 
   if (!selectedFormula) {
@@ -203,7 +252,7 @@ export default function Calculos() {
         <Mistura90Guide formulas={formulas} onSelectFormula={selectFormula} onApplyValues={applyDetectedValues} />
       )}
 
-      <section className="grid min-h-[760px] gap-4 xl:grid-cols-[350px_minmax(420px,1fr)_420px]">
+      <section className="grid min-h-[760px] gap-4 xl:grid-cols-[300px_minmax(0,1fr)] 2xl:grid-cols-[320px_minmax(0,1fr)_380px]">
         <Card className="gradient-industrial glow-card min-h-[560px] border-border/60">
           <CardHeader className="border-b border-border/70 p-4">
             <div className="flex items-center justify-between gap-3">
@@ -311,10 +360,20 @@ export default function Calculos() {
               setValues((current) => ({ ...current, [name]: value }));
               setErrors((current) => ({ ...current, [name]: "" }));
               setResult(null);
+              setCalculationError(null);
             }}
             onCalculate={handleCalculate}
             onReset={handleReset}
           />
+
+          {calculationError && (
+            <div className="rounded-lg border border-destructive/25 bg-destructive/10 p-4">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="mt-0.5 h-4 w-4 text-destructive" />
+                <p className="text-sm leading-relaxed text-muted-foreground">{calculationError}</p>
+              </div>
+            </div>
+          )}
 
           {selectedFormula.status !== "validada" && selectedFormula.status !== "aprovada" && (
             <div className="rounded-lg border border-warning/25 bg-warning/10 p-4">
@@ -328,7 +387,9 @@ export default function Calculos() {
           )}
         </div>
 
-        <StepByStepViewer formula={selectedFormula} values={values} result={result} />
+        <div className="min-w-0 xl:col-span-2 2xl:col-span-1">
+          <StepByStepViewer formula={selectedFormula} values={values} result={result} />
+        </div>
       </section>
     </div>
   );
@@ -365,4 +426,11 @@ function Metric({ label, value }: { label: string; value: number }) {
       <p className="text-xs text-muted-foreground">{label}</p>
     </div>
   );
+}
+
+function parseTechnicalNumber(value: string | undefined) {
+  if (!value) return Number.NaN;
+  const normalized = value.trim().replace(",", ".");
+  if (!/^-?\d+(\.\d+)?$/.test(normalized)) return Number.NaN;
+  return Number(normalized);
 }

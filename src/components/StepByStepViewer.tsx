@@ -1,6 +1,7 @@
 import { CheckCircle2, Clipboard, ClipboardCheck, ClipboardList, Download, FileText, Lightbulb, Sigma, type LucideIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { ReactNode } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -54,6 +55,7 @@ export function StepByStepViewer({ formula, values, result }: StepByStepViewerPr
     anchor.download = `${formula.id}-resultado.txt`;
     anchor.click();
     URL.revokeObjectURL(url);
+    toast.success("Relatorio TXT baixado.");
   };
 
   const printPdfReport = () => {
@@ -71,14 +73,8 @@ export function StepByStepViewer({ formula, values, result }: StepByStepViewerPr
       )
       .join("");
     const stepRows = steps.map((step, index) => `<li>${index + 1}. ${escapeHtml(step)}</li>`).join("");
-    const reportWindow = window.open("", "_blank", "width=980,height=720");
-    if (!reportWindow) {
-      exportTextResult();
-      return;
-    }
     const logoUrl = `${window.location.origin}/logo-i9tmg.png`;
-
-    reportWindow.document.write(`
+    const html = `
       <!doctype html>
       <html lang="pt-BR">
         <head>
@@ -130,12 +126,33 @@ export function StepByStepViewer({ formula, values, result }: StepByStepViewerPr
           <script>window.onload = () => window.print();</script>
         </body>
       </html>
-    `);
-    reportWindow.document.close();
+    `;
+    const frame = document.createElement("iframe");
+    frame.style.position = "fixed";
+    frame.style.right = "0";
+    frame.style.bottom = "0";
+    frame.style.width = "0";
+    frame.style.height = "0";
+    frame.style.border = "0";
+    document.body.appendChild(frame);
+    const doc = frame.contentWindow?.document;
+    if (!doc) {
+      exportTextResult();
+      return;
+    }
+    doc.open();
+    doc.write(html);
+    doc.close();
+    window.setTimeout(() => {
+      frame.contentWindow?.focus();
+      frame.contentWindow?.print();
+      window.setTimeout(() => frame.remove(), 1200);
+    }, 350);
+    toast.success("Relatorio PDF aberto para impressao/salvar.");
   };
 
   return (
-    <Card className="gradient-industrial glow-card h-full border-border/60">
+    <Card className="gradient-industrial glow-card h-full min-w-0 border-border/60">
       <CardHeader className="border-b border-border/70 p-5">
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Resultado tecnico</p>
         <CardTitle className="text-xl text-foreground">Analise e passo a passo</CardTitle>
@@ -158,7 +175,7 @@ export function StepByStepViewer({ formula, values, result }: StepByStepViewerPr
             <div className="space-y-4 p-5">
               <div className="rounded-lg border border-primary/25 bg-primary/10 p-5 text-center">
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Resultado</p>
-                <p className="mt-2 font-mono text-4xl font-semibold text-primary">{result}</p>
+                <p className="mt-2 break-words font-mono text-3xl font-semibold text-primary sm:text-4xl">{result}</p>
                 {formula.resultUnit && <p className="mt-1 text-sm text-muted-foreground">{formula.resultUnit}</p>}
                 <div className="mt-4 flex flex-wrap justify-center gap-2">
                   <Button type="button" size="sm" variant="outline" onClick={copyResult} className="border-primary/25 bg-background/30 text-foreground">
@@ -184,9 +201,9 @@ export function StepByStepViewer({ formula, values, result }: StepByStepViewerPr
                 <p className="font-mono text-sm text-foreground">{steps[1]}</p>
                 <div className="mt-3 space-y-2">
                   {formula.variables.map((variable) => (
-                    <div key={variable.name} className="flex items-center justify-between gap-3 rounded-md bg-muted/25 px-3 py-2 text-sm">
-                      <span className="min-w-0 truncate text-muted-foreground">{variable.label}</span>
-                      <span className="shrink-0 font-mono text-foreground">
+                    <div key={variable.name} className="flex flex-col gap-1 rounded-md bg-muted/25 px-3 py-2 text-sm sm:flex-row sm:items-center sm:justify-between">
+                      <span className="min-w-0 text-muted-foreground">{variable.label}</span>
+                      <span className="font-mono text-foreground sm:text-right">
                         {variable.name} = {values[variable.name] || "0"} {variable.unit}
                       </span>
                     </div>

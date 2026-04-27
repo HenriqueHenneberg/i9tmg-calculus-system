@@ -31,12 +31,12 @@ export function CalculationPanel({
   onUseExample,
 }: CalculationPanelProps) {
   return (
-    <Card className="gradient-industrial glow-card flex h-full flex-col border-border/60">
+    <Card className="gradient-industrial glow-card flex h-full min-w-0 flex-col border-border/60">
       <CardHeader className="border-b border-border/70 p-5">
         <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
           <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Console de calculo</p>
-            <CardTitle className="mt-2 text-xl text-foreground">{formula.name}</CardTitle>
+            <CardTitle className="mt-2 text-xl leading-snug text-foreground">{formula.name}</CardTitle>
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">{formula.description}</p>
             <div className="mt-3 flex flex-wrap gap-2">
               {formula.tags.slice(0, 5).map((tag) => (
@@ -46,8 +46,8 @@ export function CalculationPanel({
               ))}
             </div>
           </div>
-          <div className="flex shrink-0 flex-col gap-2">
-            <div className="rounded-lg border border-primary/25 bg-primary/10 px-4 py-3 font-mono text-sm text-primary">
+          <div className="flex min-w-0 flex-col gap-2 md:max-w-[320px]">
+            <div className="technical-code text-sm">
               {formula.expression}
             </div>
             <div className="flex gap-2">

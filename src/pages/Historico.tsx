@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { CalendarDays, Copy, Eye, Filter, RotateCcw, Search } from "lucide-react";
+import { CalendarDays, Eye, Filter, RotateCcw, Search } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,6 +31,7 @@ const formulaStatusLabels = {
 };
 
 export default function Historico() {
+  const navigate = useNavigate();
   const { history: calculationsHistory, sectors } = useIndustrialWorkspace();
   const [search, setSearch] = useState("");
   const [sector, setSector] = useState("todos");
@@ -130,11 +132,11 @@ export default function Historico() {
             type="button"
             variant="ghost"
             size="icon"
-            onClick={() => setHighlighted({ ...row, id: row.id + 1000, status: "Rascunho" })}
+            onClick={() => rerunCalculation(row)}
             className="h-8 w-8 text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-            title="Duplicar"
+            title="Reexecutar no console"
           >
-            <Copy className="h-4 w-4" />
+            <RotateCcw className="h-4 w-4" />
           </Button>
         </div>
       ),
@@ -147,6 +149,10 @@ export default function Historico() {
     setDate("");
   };
 
+  const rerunCalculation = (row: CalculationRecord) => {
+    navigate(`/calculos?formula=${encodeURIComponent(row.formulaId)}&values=${encodeURIComponent(JSON.stringify(row.values))}`);
+  };
+
   return (
     <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-6">
       <section className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
@@ -154,7 +160,7 @@ export default function Historico() {
           <Badge className="border-primary/25 bg-primary/15 text-primary hover:bg-primary/15">Rastreabilidade</Badge>
           <h1 className="mt-3 text-3xl font-semibold tracking-tight text-foreground">Historico</h1>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-            Consulte, visualize e duplique calculos tecnicos ja executados pela operacao.
+            Consulte, visualize e reexecute calculos tecnicos ja executados pela operacao.
           </p>
         </div>
         <div className="grid grid-cols-1 gap-3 text-center sm:grid-cols-3">

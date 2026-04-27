@@ -1,6 +1,6 @@
 import { Bell, Moon, Save, ShieldCheck, SlidersHorizontal, Sun, type LucideIcon } from "lucide-react";
-import { useState } from "react";
 import type { ReactNode } from "react";
+import { toast } from "sonner";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,13 +19,10 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useIndustrialWorkspace } from "@/contexts/IndustrialWorkspaceContext";
+import type { SectorId } from "@/lib/industrial-data";
 
 export default function Configuracoes() {
-  const { userName, setUserName, sectors } = useIndustrialWorkspace();
-  const [precision, setPrecision] = useState([4]);
-  const [compactMode, setCompactMode] = useState(false);
-  const [notifications, setNotifications] = useState(true);
-  const [darkTheme, setDarkTheme] = useState(true);
+  const { userName, setUserName, sectors, preferences, updatePreferences } = useIndustrialWorkspace();
 
   return (
     <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-6">
@@ -37,7 +34,11 @@ export default function Configuracoes() {
             Ajuste perfil, tema visual e padroes de calculo para o fluxo tecnico da equipe.
           </p>
         </div>
-        <Button type="button" className="h-11 bg-primary text-primary-foreground glow-primary hover:bg-highlight-glow">
+        <Button
+          type="button"
+          onClick={() => toast.success("Preferencias salvas neste navegador.")}
+          className="h-11 bg-primary text-primary-foreground glow-primary hover:bg-highlight-glow"
+        >
           <Save className="h-4 w-4" />
           Salvar preferencias
         </Button>
@@ -58,7 +59,7 @@ export default function Configuracoes() {
                   <AvatarFallback className="bg-primary/15 text-xl font-semibold text-primary">IM</AvatarFallback>
                 </Avatar>
                 <h2 className="mt-4 text-xl font-semibold text-foreground">{userName || "i9TMG Master"}</h2>
-                <p className="text-sm text-muted-foreground">Engenharia Industrial</p>
+                <p className="text-sm text-muted-foreground">{preferences.jobTitle}</p>
                 <Badge variant="outline" className="mt-4 border-success/25 bg-success/10 text-success">
                   Acesso tecnico validado
                 </Badge>
@@ -80,13 +81,21 @@ export default function Configuracoes() {
                   <Input value={userName} onChange={(event) => setUserName(event.target.value)} className="border-border bg-muted/25 text-foreground" />
                 </Field>
                 <Field label="Cargo">
-                  <Input defaultValue="Engenharia Industrial" className="border-border bg-muted/25 text-foreground" />
+                  <Input
+                    value={preferences.jobTitle}
+                    onChange={(event) => updatePreferences({ jobTitle: event.target.value })}
+                    className="border-border bg-muted/25 text-foreground"
+                  />
                 </Field>
                 <Field label="E-mail">
-                  <Input defaultValue="engenharia@i9tmg.com.br" className="border-border bg-muted/25 text-foreground" />
+                  <Input
+                    value={preferences.email}
+                    onChange={(event) => updatePreferences({ email: event.target.value })}
+                    className="border-border bg-muted/25 text-foreground"
+                  />
                 </Field>
                 <Field label="Unidade">
-                  <Select defaultValue="planta-01">
+                  <Select value={preferences.unit} onValueChange={(unit) => updatePreferences({ unit })}>
                     <SelectTrigger className="border-border bg-muted/25 text-foreground">
                       <SelectValue />
                     </SelectTrigger>
@@ -111,16 +120,16 @@ export default function Configuracoes() {
               </CardHeader>
               <CardContent className="space-y-5 p-5">
                 <SettingRow
-                  icon={darkTheme ? Moon : Sun}
+                  icon={preferences.darkTheme ? Moon : Sun}
                   title="Tema industrial escuro"
                   description="Mantem fundo #0A2540 e contraste alto para salas de controle."
-                  control={<Switch checked={darkTheme} onCheckedChange={setDarkTheme} />}
+                  control={<Switch checked={preferences.darkTheme} onCheckedChange={(darkTheme) => updatePreferences({ darkTheme })} />}
                 />
                 <SettingRow
                   icon={SlidersHorizontal}
                   title="Modo compacto"
                   description="Reduz espacamentos em tabelas e paineis de uso recorrente."
-                  control={<Switch checked={compactMode} onCheckedChange={setCompactMode} />}
+                  control={<Switch checked={preferences.compactMode} onCheckedChange={(compactMode) => updatePreferences({ compactMode })} />}
                 />
                 <div className="grid grid-cols-4 gap-3">
                   <Swatch label="Fundo" className="bg-[#0A2540]" />
@@ -165,16 +174,16 @@ export default function Configuracoes() {
                   icon={Bell}
                   title="Alertas de validacao"
                   description="Exibe aviso quando resultado exige revisao ou tolerancia adicional."
-                  control={<Switch checked={notifications} onCheckedChange={setNotifications} />}
+                  control={<Switch checked={preferences.notifications} onCheckedChange={(notifications) => updatePreferences({ notifications })} />}
                 />
                 <SettingRow
                   icon={ShieldCheck}
                   title="Salvar historico automaticamente"
                   description="Registra calculos concluidos para rastreabilidade."
-                  control={<Switch defaultChecked />}
+                  control={<Switch checked={preferences.autoSaveHistory} onCheckedChange={(autoSaveHistory) => updatePreferences({ autoSaveHistory })} />}
                 />
                 <Field label="Setor padrao">
-                  <Select defaultValue="mecanica">
+                  <Select value={preferences.defaultSector} onValueChange={(defaultSector) => updatePreferences({ defaultSector: defaultSector as SectorId })}>
                     <SelectTrigger className="border-border bg-muted/25 text-foreground">
                       <SelectValue />
                     </SelectTrigger>
@@ -199,14 +208,21 @@ export default function Configuracoes() {
                     </p>
                   </div>
                   <span className="rounded-md border border-primary/25 bg-primary/10 px-3 py-1 font-mono text-sm text-primary">
-                    {precision[0]}
+                    {preferences.precision}
                   </span>
                 </div>
-                <Slider value={precision} max={8} min={1} step={1} onValueChange={setPrecision} className="mt-8" />
+                <Slider
+                  value={[preferences.precision]}
+                  max={8}
+                  min={1}
+                  step={1}
+                  onValueChange={(value) => updatePreferences({ precision: value[0] || 4 })}
+                  className="mt-8"
+                />
                 <div className="mt-8 rounded-lg border border-border/70 bg-background/45 p-4">
                   <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Exemplo</p>
                   <p className="mt-2 font-mono text-2xl font-semibold text-foreground">
-                    {(45).toFixed(precision[0])} N.m
+                    {(45).toFixed(preferences.precision)} N.m
                   </p>
                 </div>
               </div>
