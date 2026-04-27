@@ -1,4 +1,4 @@
-import { Activity, Calculator, Database, Layers, ShieldCheck } from "lucide-react";
+import { Activity, Calculator, Database, Layers, ShieldCheck, Sparkles, Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
   Area,
@@ -36,7 +36,7 @@ const tooltipStyle = {
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { userName, formulas, sectors, history } = useIndustrialWorkspace();
+  const { userName, formulas, sectors, history, favoriteIds } = useIndustrialWorkspace();
   const sectorUsage = sectors.map((sector) => ({
     name: sector.name,
     calculos: sector.activeCalculations,
@@ -50,6 +50,10 @@ export default function Dashboard() {
   const mostUsedSector = [...sectors].sort((a, b) => b.activeCalculations - a.activeCalculations)[0];
   const mistura90Sector = sectors.find((sector) => sector.id === "elevadores_mistura_90");
   const mistura90Formulas = formulas.filter((formula) => formula.sectorId === "elevadores_mistura_90");
+  const favoriteFormulas = favoriteIds
+    .map((id) => formulas.find((formula) => formula.id === id))
+    .filter(Boolean)
+    .slice(0, 4);
 
   return (
     <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-6">
@@ -132,6 +136,55 @@ export default function Dashboard() {
           </div>
         </section>
       )}
+
+      <section className="grid gap-4 lg:grid-cols-[1fr_0.8fr]">
+        <Card className="gradient-industrial glow-card border-border/60">
+          <CardHeader className="flex flex-col gap-3 border-b border-border/70 p-5 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Atalhos pessoais</p>
+              <CardTitle className="mt-1 text-lg text-foreground">Favoritos do usuario</CardTitle>
+            </div>
+            <Star className="h-5 w-5 text-primary" />
+          </CardHeader>
+          <CardContent className="grid gap-3 p-5 sm:grid-cols-2">
+            {favoriteFormulas.length > 0 ? (
+              favoriteFormulas.map((formula) => (
+                <button
+                  key={formula.id}
+                  type="button"
+                  onClick={() => navigate(`/calculos?q=${encodeURIComponent(formula.name)}`)}
+                  className="rounded-lg border border-border/70 bg-muted/20 p-3 text-left transition-colors hover:border-primary/35 hover:bg-muted/35"
+                >
+                  <p className="truncate text-sm font-semibold text-foreground">{formula.name}</p>
+                  <p className="mt-1 truncate font-mono text-xs text-muted-foreground">{formula.expression}</p>
+                </button>
+              ))
+            ) : (
+              <div className="rounded-lg border border-border/70 bg-muted/20 p-4 text-sm text-muted-foreground sm:col-span-2">
+                Favorite formulas no console de calculos para montar seu painel de trabalho.
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="gradient-industrial glow-card border-primary/20">
+          <CardHeader className="border-b border-border/70 p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">IA local</p>
+            <CardTitle className="mt-1 flex items-center gap-2 text-lg text-foreground">
+              <Sparkles className="h-5 w-5 text-primary" />
+              Assistente de calculos
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4 p-5">
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              Busque por necessidade tecnica, detecte valores escritos e preencha variaveis automaticamente sem depender de API externa.
+            </p>
+            <Button type="button" onClick={() => navigate("/calculos")} className="w-full bg-primary text-primary-foreground hover:bg-highlight-glow">
+              Abrir assistente
+            </Button>
+          </CardContent>
+        </Card>
+      </section>
 
       <section className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
         <Card className="gradient-industrial glow-card border-border/60">

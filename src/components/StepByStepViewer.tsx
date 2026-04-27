@@ -1,4 +1,4 @@
-import { CheckCircle2, Clipboard, ClipboardCheck, ClipboardList, Download, Lightbulb, Sigma, type LucideIcon } from "lucide-react";
+import { CheckCircle2, Clipboard, ClipboardCheck, ClipboardList, Download, FileText, Lightbulb, Sigma, type LucideIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
@@ -26,28 +26,112 @@ export function StepByStepViewer({ formula, values, result }: StepByStepViewerPr
     window.setTimeout(() => setCopied(false), 1400);
   };
 
-  const exportResult = () => {
+  const buildReportText = () => [
+    "Relatorio tecnico i9TMG",
+    `Data: ${new Date().toLocaleString("pt-BR")}`,
+    `Formula: ${formula.name}`,
+    `Setor: ${formula.sector}`,
+    `Status da formula: ${formula.status}`,
+    `Versao: ${formula.version}`,
+    `Expressao: ${formula.expression}`,
+    `Resultado: ${result}${formula.resultUnit ? ` ${formula.resultUnit}` : ""}`,
+    "",
+    "Entradas:",
+    ...formula.variables.map((variable) => `${variable.name} = ${values[variable.name] || "0"} ${variable.unit}`.trim()),
+    "",
+    "Passo a passo:",
+    ...steps.map((step, index) => `${index + 1}. ${step}`),
+    "",
+    "Observacao: validar criterios internos, normas aplicaveis e limites do equipamento antes de liberar para campo.",
+  ].join("\n");
+
+  const exportTextResult = () => {
     if (!result) return;
-    const content = [
-      "Resultado tecnico i9TMG",
-      `Formula: ${formula.name}`,
-      `Setor: ${formula.sector}`,
-      `Expressao: ${formula.expression}`,
-      `Resultado: ${result}${formula.resultUnit ? ` ${formula.resultUnit}` : ""}`,
-      "",
-      "Entradas:",
-      ...formula.variables.map((variable) => `${variable.name} = ${values[variable.name] || "0"} ${variable.unit}`.trim()),
-      "",
-      "Passo a passo:",
-      ...steps.map((step, index) => `${index + 1}. ${step}`),
-    ].join("\n");
-    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+    const blob = new Blob([buildReportText()], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
     anchor.download = `${formula.id}-resultado.txt`;
     anchor.click();
     URL.revokeObjectURL(url);
+  };
+
+  const printPdfReport = () => {
+    if (!result) return;
+    const reportRows = formula.variables
+      .map(
+        (variable) => `
+          <tr>
+            <td>${escapeHtml(variable.name)}</td>
+            <td>${escapeHtml(variable.label)}</td>
+            <td>${escapeHtml(values[variable.name] || "0")}</td>
+            <td>${escapeHtml(variable.unit)}</td>
+          </tr>
+        `,
+      )
+      .join("");
+    const stepRows = steps.map((step, index) => `<li>${index + 1}. ${escapeHtml(step)}</li>`).join("");
+    const reportWindow = window.open("", "_blank", "width=980,height=720");
+    if (!reportWindow) {
+      exportTextResult();
+      return;
+    }
+    const logoUrl = `${window.location.origin}/logo-i9tmg.png`;
+
+    reportWindow.document.write(`
+      <!doctype html>
+      <html lang="pt-BR">
+        <head>
+          <meta charset="utf-8" />
+          <title>Relatorio i9TMG - ${escapeHtml(formula.name)}</title>
+          <style>
+            body { margin: 0; background: #f4f6f8; color: #102033; font-family: Arial, sans-serif; }
+            main { max-width: 920px; margin: 0 auto; padding: 32px; }
+            header { display: flex; align-items: center; justify-content: space-between; border-bottom: 4px solid #ff6a00; padding-bottom: 18px; }
+            img { height: 54px; width: 54px; object-fit: contain; }
+            h1 { margin: 0; color: #0A2540; font-size: 26px; }
+            h2 { color: #0A2540; font-size: 18px; margin-top: 28px; }
+            .meta { color: #53606f; font-size: 13px; margin-top: 6px; }
+            .result { margin-top: 24px; border: 1px solid #d8dee8; background: #fff; padding: 20px; border-left: 6px solid #ff6a00; }
+            .value { color: #ff6a00; font-size: 36px; font-weight: 700; font-family: Consolas, monospace; }
+            table { border-collapse: collapse; width: 100%; background: #fff; }
+            th, td { border: 1px solid #d8dee8; padding: 10px; text-align: left; font-size: 13px; }
+            th { background: #0A2540; color: #fff; }
+            li { margin: 8px 0; font-family: Consolas, monospace; }
+            .note { margin-top: 26px; color: #53606f; font-size: 12px; }
+            @media print { body { background: #fff; } main { padding: 0; } button { display: none; } }
+          </style>
+        </head>
+        <body>
+          <main>
+            <header>
+              <div>
+                <h1>Relatorio tecnico i9TMG</h1>
+                <div class="meta">${escapeHtml(new Date().toLocaleString("pt-BR"))}</div>
+              </div>
+              <img src="${escapeHtml(logoUrl)}" alt="i9TMG" />
+            </header>
+            <section class="result">
+              <div class="meta">${escapeHtml(formula.sector)} - status ${escapeHtml(formula.status)} - versao ${formula.version}</div>
+              <h2>${escapeHtml(formula.name)}</h2>
+              <p>${escapeHtml(formula.description)}</p>
+              <div class="value">${escapeHtml(result)} ${escapeHtml(formula.resultUnit)}</div>
+              <div class="meta">${escapeHtml(formula.expression)}</div>
+            </section>
+            <h2>Entradas</h2>
+            <table>
+              <thead><tr><th>Variavel</th><th>Descricao</th><th>Valor</th><th>Unidade</th></tr></thead>
+              <tbody>${reportRows}</tbody>
+            </table>
+            <h2>Passo a passo</h2>
+            <ol>${stepRows}</ol>
+            <p class="note">Validar criterios internos, normas aplicaveis e limites do equipamento antes de liberar para campo.</p>
+          </main>
+          <script>window.onload = () => window.print();</script>
+        </body>
+      </html>
+    `);
+    reportWindow.document.close();
   };
 
   return (
@@ -76,14 +160,18 @@ export function StepByStepViewer({ formula, values, result }: StepByStepViewerPr
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Resultado</p>
                 <p className="mt-2 font-mono text-4xl font-semibold text-primary">{result}</p>
                 {formula.resultUnit && <p className="mt-1 text-sm text-muted-foreground">{formula.resultUnit}</p>}
-                <div className="mt-4 flex justify-center gap-2">
+                <div className="mt-4 flex flex-wrap justify-center gap-2">
                   <Button type="button" size="sm" variant="outline" onClick={copyResult} className="border-primary/25 bg-background/30 text-foreground">
                     {copied ? <ClipboardCheck className="h-4 w-4 text-success" /> : <Clipboard className="h-4 w-4" />}
                     {copied ? "Copiado" : "Copiar"}
                   </Button>
-                  <Button type="button" size="sm" variant="outline" onClick={exportResult} className="border-primary/25 bg-background/30 text-foreground">
+                  <Button type="button" size="sm" variant="outline" onClick={printPdfReport} className="border-primary/25 bg-background/30 text-foreground">
+                    <FileText className="h-4 w-4" />
+                    PDF
+                  </Button>
+                  <Button type="button" size="sm" variant="outline" onClick={exportTextResult} className="border-primary/25 bg-background/30 text-foreground">
                     <Download className="h-4 w-4" />
-                    Exportar
+                    TXT
                   </Button>
                 </div>
               </div>
@@ -128,6 +216,15 @@ export function StepByStepViewer({ formula, values, result }: StepByStepViewerPr
       </CardContent>
     </Card>
   );
+}
+
+function escapeHtml(value: string | number) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
 
 function Step({

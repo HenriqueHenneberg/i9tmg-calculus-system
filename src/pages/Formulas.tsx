@@ -27,7 +27,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIndustrialWorkspace } from "@/contexts/IndustrialWorkspaceContext";
-import { formatFormulaForDisplay, validateFormula } from "@/lib/formula-engine";
+import { evaluateFormula, formatFormulaForDisplay, validateFormula } from "@/lib/formula-engine";
 import type { Difficulty, Formula, FormulaStatus, SectorId } from "@/lib/industrial-data";
 import { adminOnlyMessage, canApproveFormula, canCreateFormula, canCreateSector, canEditFormula } from "@/lib/permissions";
 
@@ -128,6 +128,47 @@ export default function Formulas() {
     draft.name && draft.expression && draft.description && draft.example && draft.simpleExplanation && validVariables.length > 0,
   );
   const canSave = hasRequiredFields && validation.valid;
+  const previewValues = useMemo(
+    () => Object.fromEntries(validVariables.map((variable) => [variable.name.trim(), variable.placeholder || "1"])),
+    [validVariables],
+  );
+  const previewFormula = useMemo<Formula | null>(() => {
+    if (!draft.expression || validVariables.length === 0) return null;
+    return {
+      id: editingId || "preview",
+      name: draft.name || "Preview",
+      sectorId: draft.sectorId,
+      sector: selectedSector?.name || "Setor",
+      expression: draft.expression,
+      resultUnit: draft.resultUnit,
+      description: draft.description || "Formula em edicao.",
+      variables: validVariables.map((variable) => ({
+        name: variable.name.trim(),
+        label: variable.label.trim() || variable.name.trim(),
+        unit: variable.unit.trim(),
+        placeholder: variable.placeholder.trim() || "1",
+      })),
+      difficulty: draft.difficulty,
+      usageCount: 0,
+      example: draft.example,
+      simpleExplanation: draft.simpleExplanation,
+      tags: draft.tags.split(",").map((tag) => tag.trim()).filter(Boolean),
+      status: draft.status,
+      createdBy: user?.name || "Preview",
+      createdAt: new Date().toISOString(),
+      version: 1,
+      technicalNotes: draft.technicalNotes,
+    };
+  }, [draft, editingId, selectedSector?.name, user?.name, validVariables]);
+  const previewResult = useMemo(() => {
+    if (!previewFormula || !validation.valid) return null;
+    try {
+      const calculated = evaluateFormula(previewFormula, previewValues);
+      return Number.isFinite(calculated) ? calculated.toFixed(4) : null;
+    } catch {
+      return null;
+    }
+  }, [previewFormula, previewValues, validation.valid]);
 
   const openCreateDialog = () => {
     setDraft({ ...emptyDraft, variables: [{ id: Date.now().toString(), name: "", label: "", unit: "", placeholder: "" }] });
@@ -588,6 +629,36 @@ export default function Formulas() {
                     </p>
                     {validation.unusedVariables.length > 0 && (
                       <p className="mt-1 text-xs text-muted-foreground">Variaveis cadastradas nao usadas: {validation.unusedVariables.join(", ")}</p>
+                    )}
+                  </div>
+                  <div className="rounded-lg border border-border/70 bg-background/35 p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Preview calculavel</p>
+                        <p className="mt-1 text-sm text-muted-foreground">Usa os valores de exemplo das variaveis.</p>
+                      </div>
+                      <Badge variant="outline" className={previewResult ? "border-primary/25 bg-primary/10 text-primary" : "border-warning/25 bg-warning/10 text-warning"}>
+                        {previewResult ? "calculado" : "aguardando"}
+                      </Badge>
+                    </div>
+                    {previewResult ? (
+                      <div className="mt-4 rounded-lg border border-primary/25 bg-primary/10 p-4">
+                        <p className="font-mono text-3xl font-semibold text-primary">{previewResult}</p>
+                        {draft.resultUnit && <p className="mt-1 text-xs text-muted-foreground">{draft.resultUnit}</p>}
+                      </div>
+                    ) : (
+                      <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+                        Complete formula e variaveis com exemplos numericos para ver o resultado antes de salvar.
+                      </p>
+                    )}
+                    {Object.keys(previewValues).length > 0 && (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {Object.entries(previewValues).map(([name, value]) => (
+                          <span key={name} className="rounded-md border border-border/70 bg-muted/20 px-2 py-1 font-mono text-xs text-muted-foreground">
+                            {name}={value}
+                          </span>
+                        ))}
+                      </div>
                     )}
                   </div>
                   <div className="flex flex-wrap gap-2">

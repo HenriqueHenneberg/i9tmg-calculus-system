@@ -7,10 +7,12 @@ import {
   type Formula,
   type Sector,
 } from "@/lib/industrial-data";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface StoredWorkspace {
   userName: string;
   favoriteIds: string[];
+  favoriteIdsByUser: Record<string, string[]>;
   customSectors: Sector[];
   customFormulas: Formula[];
   formulaOverrides: Record<string, Formula>;
@@ -39,6 +41,7 @@ const storageKey = "tech-calculus-industrial-workspace-v2";
 const initialWorkspace: StoredWorkspace = {
   userName: "",
   favoriteIds: ["torque", "oee", "potencia-trifasica", "mtbf"],
+  favoriteIdsByUser: {},
   customSectors: [],
   customFormulas: [],
   formulaOverrides: {},
@@ -48,7 +51,10 @@ const initialWorkspace: StoredWorkspace = {
 const IndustrialWorkspaceContext = createContext<IndustrialWorkspaceContextValue | null>(null);
 
 export function IndustrialWorkspaceProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
   const [workspace, setWorkspace] = useState<StoredWorkspace>(() => readWorkspace());
+  const activeUserKey = user?.username || workspace.userName || "operador";
+  const activeFavoriteIds = workspace.favoriteIdsByUser[activeUserKey] || workspace.favoriteIds;
 
   useEffect(() => {
     window.localStorage.setItem(storageKey, JSON.stringify(workspace));
@@ -141,6 +147,9 @@ export function IndustrialWorkspaceProvider({ children }: { children: ReactNode 
       ...current,
       customFormulas: current.customFormulas.filter((formula) => formula.id !== formulaId),
       favoriteIds: current.favoriteIds.filter((id) => id !== formulaId),
+      favoriteIdsByUser: Object.fromEntries(
+        Object.entries(current.favoriteIdsByUser).map(([key, ids]) => [key, ids.filter((id) => id !== formulaId)]),
+      ),
     }));
     return true;
   };
@@ -163,9 +172,12 @@ export function IndustrialWorkspaceProvider({ children }: { children: ReactNode 
   const toggleFavorite = (formulaId: string) => {
     setWorkspace((current) => ({
       ...current,
-      favoriteIds: current.favoriteIds.includes(formulaId)
-        ? current.favoriteIds.filter((id) => id !== formulaId)
-        : [formulaId, ...current.favoriteIds],
+      favoriteIdsByUser: {
+        ...current.favoriteIdsByUser,
+        [activeUserKey]: (current.favoriteIdsByUser[activeUserKey] || current.favoriteIds).includes(formulaId)
+          ? (current.favoriteIdsByUser[activeUserKey] || current.favoriteIds).filter((id) => id !== formulaId)
+          : [formulaId, ...(current.favoriteIdsByUser[activeUserKey] || current.favoriteIds)],
+      },
     }));
   };
 
@@ -194,19 +206,19 @@ export function IndustrialWorkspaceProvider({ children }: { children: ReactNode 
   };
 
   const value: IndustrialWorkspaceContextValue = {
-    userName: workspace.userName,
+    userName: user?.name || workspace.userName,
     setUserName: (name) => setWorkspace((current) => ({ ...current, userName: name })),
     formulas,
     sectors,
     history,
-    favoriteIds: workspace.favoriteIds,
+    favoriteIds: activeFavoriteIds,
     saveSector,
     saveFormula,
     duplicateFormula,
     removeFormula,
     updateFormulaStatus,
     toggleFavorite,
-    isFavorite: (formulaId) => workspace.favoriteIds.includes(formulaId),
+    isFavorite: (formulaId) => activeFavoriteIds.includes(formulaId),
     recordCalculation,
   };
 
@@ -230,6 +242,7 @@ function readWorkspace(): StoredWorkspace {
       ...initialWorkspace,
       ...parsed,
       favoriteIds: parsed.favoriteIds || initialWorkspace.favoriteIds,
+      favoriteIdsByUser: parsed.favoriteIdsByUser || {},
       customSectors: parsed.customSectors || [],
       customFormulas: parsed.customFormulas || [],
       formulaOverrides: parsed.formulaOverrides || {},

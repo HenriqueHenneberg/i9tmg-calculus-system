@@ -3,7 +3,9 @@ import { AlertTriangle, Flame, Search, SlidersHorizontal, Star } from "lucide-re
 import { useSearchParams } from "react-router-dom";
 import { CalculationPanel } from "@/components/CalculationPanel";
 import { FormulaCard } from "@/components/FormulaCard";
+import { Mistura90Guide } from "@/components/Mistura90Guide";
 import { StepByStepViewer } from "@/components/StepByStepViewer";
+import { TechnicalAssistant } from "@/components/TechnicalAssistant";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,12 +14,12 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIndustrialWorkspace } from "@/contexts/IndustrialWorkspaceContext";
 import { evaluateFormula } from "@/lib/formula-engine";
+import { rankFormulas } from "@/lib/industrial-assistant";
 import type { Formula, SectorId } from "@/lib/industrial-data";
 
 export default function Calculos() {
   const { formulas, sectors, favoriteIds, isFavorite, toggleFavorite, recordCalculation } = useIndustrialWorkspace();
   const { user } = useAuth();
-  const admin = user?.role === "admin";
   const [searchParams] = useSearchParams();
   const [search, setSearch] = useState("");
   const [selectedSector, setSelectedSector] = useState<SectorId | "todos">("todos");
@@ -41,8 +43,23 @@ export default function Calculos() {
   const selectedFormula = formulas.find((formula) => formula.id === selectedFormulaId) || formulas[0];
 
   const filteredFormulas = useMemo(() => {
-    const term = search.toLowerCase();
-    return formulas.filter((formula) => formula.status !== "arquivada").filter((formula) => {
+    const term = search.trim().toLowerCase();
+    const activeFormulas = formulas.filter((formula) => formula.status !== "arquivada").filter((formula) => {
+      const matchSector = selectedSector === "todos" || formula.sectorId === selectedSector;
+      return matchSector;
+    });
+
+    if (!term) {
+      return [...activeFormulas].sort((a, b) => statusRank[b.status] - statusRank[a.status] || b.usageCount - a.usageCount);
+    }
+
+    const ranked = rankFormulas(search, activeFormulas);
+    if (ranked.length > 0) {
+      return ranked.map((item) => item.formula);
+    }
+
+    const terms = term.split(/\s+/).filter(Boolean);
+    return activeFormulas.filter((formula) => {
       const searchable = [
         formula.name,
         formula.sector,
@@ -54,9 +71,7 @@ export default function Calculos() {
       ]
         .join(" ")
         .toLowerCase();
-      const matchSearch = searchable.includes(term);
-      const matchSector = selectedSector === "todos" || formula.sectorId === selectedSector;
-      return matchSearch && matchSector;
+      return terms.some((searchTerm) => searchable.includes(searchTerm));
     }).sort((a, b) => statusRank[b.status] - statusRank[a.status] || b.usageCount - a.usageCount);
   }, [formulas, search, selectedSector]);
 
@@ -122,6 +137,18 @@ export default function Calculos() {
     setResult(null);
   };
 
+  const applyDetectedValues = (nextValues: Record<string, string>) => {
+    setValues((current) => ({ ...current, ...nextValues }));
+    setErrors((current) => {
+      const nextErrors = { ...current };
+      Object.keys(nextValues).forEach((key) => {
+        delete nextErrors[key];
+      });
+      return nextErrors;
+    });
+    setResult(null);
+  };
+
   if (!selectedFormula) {
     return null;
   }
@@ -163,6 +190,18 @@ export default function Calculos() {
           </Button>
         </div>
       </section>
+
+      <TechnicalAssistant
+        formulas={formulas}
+        selectedFormula={selectedFormula}
+        onSelectFormula={selectFormula}
+        onApplyValues={applyDetectedValues}
+        onSearch={(query) => setSearch(query)}
+      />
+
+      {(selectedSector === "elevadores_mistura_90" || selectedFormula.sectorId === "elevadores_mistura_90") && (
+        <Mistura90Guide formulas={formulas} onSelectFormula={selectFormula} onApplyValues={applyDetectedValues} />
+      )}
 
       <section className="grid min-h-[760px] gap-4 xl:grid-cols-[350px_minmax(420px,1fr)_420px]">
         <Card className="gradient-industrial glow-card min-h-[560px] border-border/60">
@@ -265,8 +304,8 @@ export default function Calculos() {
             values={values}
             errors={errors}
             loading={loading}
-          favorite={isFavorite(selectedFormula.id)}
-          onToggleFavorite={admin ? () => toggleFavorite(selectedFormula.id) : undefined}
+            favorite={isFavorite(selectedFormula.id)}
+            onToggleFavorite={() => toggleFavorite(selectedFormula.id)}
             onUseExample={fillExample}
             onChange={(name, value) => {
               setValues((current) => ({ ...current, [name]: value }));
