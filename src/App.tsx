@@ -18,6 +18,7 @@ const Formulas = lazy(() => import("./pages/Formulas"));
 const Historico = lazy(() => import("./pages/Historico"));
 const Setores = lazy(() => import("./pages/Setores"));
 const Configuracoes = lazy(() => import("./pages/Configuracoes"));
+const Mistura90Excel = lazy(() => import("./pages/Mistura90Excel"));
 const Login = lazy(() => import("./pages/Login"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
@@ -41,6 +42,7 @@ const App = () => (
                   <Route path="/historico" element={<ProtectedRoute><AppLayout><Historico /></AppLayout></ProtectedRoute>} />
                   <Route path="/setores" element={<ProtectedRoute><AppLayout><Setores /></AppLayout></ProtectedRoute>} />
                   <Route path="/configuracoes" element={<ProtectedRoute><AppLayout><Configuracoes /></AppLayout></ProtectedRoute>} />
+                  <Route path="/mistura90-excel" element={<ProtectedRoute><AppLayout><Mistura90Excel /></AppLayout></ProtectedRoute>} />
                   <Route path="/admin" element={<ProtectedRoute adminOnly><AppLayout><Admin /></AppLayout></ProtectedRoute>} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>

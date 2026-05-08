@@ -1,4 +1,4 @@
-import { Activity, Calculator, Database, Layers, ShieldCheck, Sparkles, Star } from "lucide-react";
+import { Activity, Calculator, Database, FileSpreadsheet, Layers, PackageCheck, ShieldCheck, Sparkles, Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
   Area,
@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/table";
 import { useIndustrialWorkspace } from "@/contexts/IndustrialWorkspaceContext";
 import { weeklyActivity } from "@/lib/industrial-data";
+import { getMistura90Kpis, mistura90Workbook } from "@/lib/mistura90-excel-data";
 
 const tooltipStyle = {
   background: "hsl(var(--card))",
@@ -49,7 +50,10 @@ export default function Dashboard() {
   const pendingApproval = formulas.filter((formula) => formula.status === "em_revisao").length;
   const mostUsedSector = [...sectors].sort((a, b) => b.activeCalculations - a.activeCalculations)[0];
   const mistura90Sector = sectors.find((sector) => sector.id === "elevadores_mistura_90");
+  const equipamentosMistura90Sector = sectors.find((sector) => sector.id === "equipamentos_mistura_90");
   const mistura90Formulas = formulas.filter((formula) => formula.sectorId === "elevadores_mistura_90");
+  const equipamentosMistura90Formulas = formulas.filter((formula) => formula.sectorId === "equipamentos_mistura_90");
+  const excelKpis = getMistura90Kpis();
   const favoriteFormulas = favoriteIds
     .map((id) => formulas.find((formula) => formula.id === id))
     .filter(Boolean)
@@ -133,6 +137,37 @@ export default function Dashboard() {
               <Metric label="Uso" value={mistura90Sector.activeCalculations} />
               <Metric label="Saude" value={`${mistura90Sector.health}%`} />
             </div>
+          </div>
+        </section>
+      )}
+
+      {equipamentosMistura90Sector && (
+        <section className="rounded-lg border border-primary/25 bg-[linear-gradient(135deg,hsl(var(--primary)/0.14),hsl(var(--muted)/0.16))] p-5 glow-card">
+          <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+            <div className="max-w-3xl">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Planilha tecnica convertida</p>
+              <h2 className="mt-2 flex flex-wrap items-center gap-3 text-2xl font-semibold text-foreground">
+                <FileSpreadsheet className="h-6 w-6 text-primary" />
+                Equipamentos Mistura 90
+              </h2>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                {equipamentosMistura90Sector.description} Fonte: {mistura90Workbook.fileName}.
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-3 text-center sm:grid-cols-4">
+              <Metric label="Equipamentos" value={excelKpis.equipments} />
+              <Metric label="Itens" value={excelKpis.reportItems} />
+              <Metric label="Pendencias" value={excelKpis.pendingItems} />
+              <Metric label="Formulas" value={equipamentosMistura90Formulas.length} />
+            </div>
+            <Button
+              type="button"
+              onClick={() => navigate("/mistura90-excel")}
+              className="h-11 shrink-0 bg-primary text-primary-foreground hover:bg-highlight-glow"
+            >
+              <PackageCheck className="mr-2 h-4 w-4" />
+              Abrir modulo Excel
+            </Button>
           </div>
         </section>
       )}

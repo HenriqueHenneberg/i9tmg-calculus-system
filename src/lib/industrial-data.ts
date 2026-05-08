@@ -15,6 +15,7 @@ export type BaseSectorId =
   | "qualidade"
   | "planejamento"
   | "energia"
+  | "equipamentos_mistura_90"
   | "elevadores_mistura_90";
 
 export type SectorId = BaseSectorId | (string & {});
@@ -262,6 +263,18 @@ const baseSectors: BaseSector[] = [
     iconName: "BatteryCharging",
   },
   {
+    id: "equipamentos_mistura_90",
+    name: "Equipamentos Mistura 90",
+    description:
+      "Modulo tecnico digitalizado da planilha Calculos Equipamentos Mistura 90 (2), cobrindo elevadores, peneiras, moinho, transportadores, misturador, dosador, resumo de materiais e relatorio final.",
+    activeCalculations: 58,
+    health: 89,
+    trend: "+24%",
+    usageLevel: "Critico",
+    color: "#ff6a00",
+    iconName: "FileSpreadsheet",
+  },
+  {
     id: "elevadores_mistura_90",
     name: "Elevadores e Mistura 90",
     description:
@@ -278,6 +291,98 @@ const baseSectors: BaseSector[] = [
 const sectorNameById = Object.fromEntries(baseSectors.map((sector) => [sector.id, sector.name])) as Record<SectorId, string>;
 
 const formulaSeeds: FormulaSeed[] = [
+  {
+    id: "mistura90-area-peneira-rotativa",
+    name: "Area Requerida da Peneira Rotativa",
+    sectorId: "equipamentos_mistura_90",
+    expression: "Areq = Q / (Cunit * F1 * F2 * F3 * F4 * F5 * F6)",
+    resultUnit: "m2",
+    description: "Calcula area minima de peneiramento para peneiras rotativas do pacote Mistura 90 a partir da vazao e fatores de correcao.",
+    variables: [
+      variable("Q", "Alimentacao de projeto", "t/h", "160"),
+      variable("Cunit", "Capacidade unitaria", "t/h.m2", "9.5"),
+      variable("F1", "Fator de granulometria", "", "0.92"),
+      variable("F2", "Fator de umidade", "", "0.95"),
+      variable("F3", "Fator de malha", "", "0.88"),
+      variable("F4", "Fator de inclinacao", "", "1"),
+      variable("F5", "Fator de eficiencia", "", "0.9"),
+      variable("F6", "Fator de material", "", "1"),
+    ],
+    difficulty: "Intermediaria",
+    usageCount: 44,
+    example: "Com Q=160 t/h e fatores da peneira, o sistema estima area requerida para comparar com a area selecionada.",
+    simpleExplanation: "A area cresce quando a alimentacao sobe ou quando os fatores reduzem a eficiencia do peneiramento.",
+    tags: ["mistura 90", "excel", "peneira", "area"],
+  },
+  {
+    id: "mistura90-rotacao-peneira",
+    name: "Rotacao Critica da Peneira",
+    sectorId: "equipamentos_mistura_90",
+    expression: "Rc = 42.2 / sqrt(D)",
+    resultUnit: "rpm",
+    description: "Estima a rotacao critica de uma peneira rotativa a partir do diametro da gaiola.",
+    variables: [variable("D", "Diametro da peneira", "m", "1.25")],
+    difficulty: "Basica",
+    usageCount: 39,
+    example: "Para D=1.25 m, a rotacao critica fica proxima de 37.75 rpm.",
+    simpleExplanation: "Peneiras maiores tendem a trabalhar com rotacao critica menor.",
+    tags: ["mistura 90", "excel", "peneira", "rpm"],
+  },
+  {
+    id: "mistura90-energia-moinho-facas",
+    name: "Energia Especifica do Moinho de Facas",
+    sectorId: "equipamentos_mistura_90",
+    expression: "Et = 10 * Wi * ((1 / sqrt(d1)) - (1 / sqrt(d0)))",
+    resultUnit: "kWh/t",
+    description: "Calcula energia especifica aproximada do moinho usando indice de trabalho e granulometrias inicial/final.",
+    variables: [
+      variable("Wi", "Indice de trabalho", "kWh/t", "11.61"),
+      variable("d1", "Produto final", "mm", "5"),
+      variable("d0", "Produto inicial", "mm", "35"),
+    ],
+    difficulty: "Intermediaria",
+    usageCount: 34,
+    example: "Wi=11.61, d1=5 mm e d0=35 mm geram energia especifica para estimar potencia.",
+    simpleExplanation: "Quanto menor o produto final desejado, maior a energia necessaria para moagem.",
+    tags: ["mistura 90", "excel", "moinho", "bond"],
+  },
+  {
+    id: "mistura90-potencia-moinho",
+    name: "Potencia do Moinho",
+    sectorId: "equipamentos_mistura_90",
+    expression: "P = Et * T * Fs",
+    resultUnit: "kW",
+    description: "Estima potencia instalada do moinho por energia especifica, taxa de alimentacao e fator de servico.",
+    variables: [
+      variable("Et", "Energia especifica", "kWh/t", "1.02"),
+      variable("T", "Taxa de alimentacao", "t/h", "8"),
+      variable("Fs", "Fator de servico", "", "1.1"),
+    ],
+    difficulty: "Intermediaria",
+    usageCount: 32,
+    example: "Et=1.02 kWh/t, T=8 t/h e Fs=1.1 indicam potencia aproximada de 8.98 kW.",
+    simpleExplanation: "Multiplica energia por tonelada pela taxa horaria e pela margem de servico.",
+    tags: ["mistura 90", "excel", "moinho", "potencia"],
+  },
+  {
+    id: "mistura90-capacidade-transportador",
+    name: "Capacidade do Transportador de Correia",
+    sectorId: "equipamentos_mistura_90",
+    expression: "Q = 3600 * S * v * gamma * eta",
+    resultUnit: "t/h",
+    description: "Calcula capacidade de transportador por area carregada, velocidade, densidade aparente e fator de enchimento.",
+    variables: [
+      variable("S", "Area carregada", "m2", "0.0649"),
+      variable("v", "Velocidade da correia", "m/s", "0.542"),
+      variable("gamma", "Peso especifico aparente", "t/m3", "0.9"),
+      variable("eta", "Fator de enchimento", "", "0.9"),
+    ],
+    difficulty: "Basica",
+    usageCount: 41,
+    example: "S=0.0649 m2, v=0.542 m/s, gamma=0.9 e eta=0.9 calculam a capacidade horaria do transportador.",
+    simpleExplanation: "A capacidade sobe com area carregada, velocidade e densidade do material.",
+    tags: ["mistura 90", "excel", "transportador", "correia"],
+  },
   {
     id: "torque",
     name: "Torque de Aperto",

@@ -5,7 +5,7 @@ import { formulas, sectors } from "@/lib/industrial-data";
 describe("industrial formula catalog", () => {
   it("contains a professional 100+ calculation catalog across all sectors", () => {
     expect(formulas.length).toBeGreaterThanOrEqual(100);
-    expect(sectors.length).toBe(15);
+    expect(sectors.length).toBeGreaterThanOrEqual(16);
   });
 
   it("validates and evaluates every bundled formula with placeholder values", () => {

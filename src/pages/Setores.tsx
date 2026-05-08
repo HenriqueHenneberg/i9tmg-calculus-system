@@ -7,6 +7,7 @@ import {
   Cpu,
   Droplets,
   Factory,
+  FileSpreadsheet,
   Gauge,
   ShieldCheck,
   SlidersHorizontal,
@@ -61,6 +62,7 @@ const sectorIcons = {
   qualidade: BadgeCheck,
   planejamento: CalendarClock,
   energia: BatteryCharging,
+  equipamentos_mistura_90: FileSpreadsheet,
   elevadores_mistura_90: Factory,
 };
 
