@@ -1,18 +1,23 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
+  Building2,
   CheckCircle2,
   ClipboardCopy,
   Download,
   Factory,
+  FileDown,
   FileSpreadsheet,
   Filter,
   Gauge,
+  Layers,
   PackageCheck,
   Printer,
+  RefreshCw,
   Search,
   Settings2,
   ShieldCheck,
+  Target,
   type LucideIcon,
 } from "lucide-react";
 import {
@@ -61,6 +66,16 @@ import {
   type Mistura90Equipment,
   type Mistura90EquipmentType,
 } from "@/lib/mistura90-excel-data";
+import {
+  calculateMistura90Scenario,
+  cloneScenarioInputs,
+  formatScenarioValue,
+  inferMistura90Scenario,
+  mistura90ScenarioLabels,
+  type Mistura90ScenarioInput,
+  type Mistura90ScenarioMode,
+} from "@/lib/mistura90-calculations";
+import { i9CompanyTimeline, i9QualityRequirements, i9Segments, i9SolutionFronts } from "@/lib/i9-requirements";
 
 const chartColors = ["#ff6a00", "#38bdf8", "#22c55e", "#f59e0b", "#a855f7", "#94a3b8"];
 
@@ -81,6 +96,15 @@ export default function Mistura90Excel() {
 
   const selectedEquipment = getEquipmentById(selectedEquipmentId) || mistura90Equipments[0];
   const selectedItems = getReportItemsByEquipment(selectedEquipment.id);
+  const [scenarioMode, setScenarioMode] = useState<Mistura90ScenarioMode>(() => inferMistura90Scenario(selectedEquipment.type));
+  const [scenarioInputs, setScenarioInputs] = useState<Mistura90ScenarioInput[]>(() => cloneScenarioInputs(inferMistura90Scenario(selectedEquipment.type)));
+  const scenarioResult = useMemo(() => calculateMistura90Scenario(scenarioMode, scenarioInputs), [scenarioInputs, scenarioMode]);
+
+  useEffect(() => {
+    const nextMode = inferMistura90Scenario(selectedEquipment.type);
+    setScenarioMode(nextMode);
+    setScenarioInputs(cloneScenarioInputs(nextMode));
+  }, [selectedEquipment.id, selectedEquipment.type]);
 
   const filteredEquipments = useMemo(
     () =>
@@ -136,6 +160,22 @@ export default function Mistura90Excel() {
 
   const reportText = useMemo(() => buildReportText(), []);
 
+  const updateScenarioInput = (key: string, value: string) => {
+    setScenarioInputs((current) =>
+      current.map((input) => (input.key === key ? { ...input, value: Number(value) || 0 } : input)),
+    );
+  };
+
+  const changeScenarioMode = (mode: Mistura90ScenarioMode) => {
+    setScenarioMode(mode);
+    setScenarioInputs(cloneScenarioInputs(mode));
+  };
+
+  const resetScenario = () => {
+    setScenarioInputs(cloneScenarioInputs(scenarioMode));
+    toast.success("Parametros padrao recarregados.");
+  };
+
   const copyReport = async () => {
     try {
       await navigator.clipboard.writeText(reportText);
@@ -174,6 +214,17 @@ export default function Mistura90Excel() {
     toast.success("Resumo CSV exportado.");
   };
 
+  const exportPdf = async () => {
+    const toastId = toast.loading("Gerando PDF tecnico i9TMG...");
+    try {
+      const { generateMistura90PdfReport } = await import("@/lib/mistura90-pdf");
+      await generateMistura90PdfReport({ selectedEquipment, scenario: scenarioResult });
+      toast.success("PDF tecnico gerado com layout i9TMG.", { id: toastId });
+    } catch {
+      toast.error("Nao foi possivel gerar o PDF.", { id: toastId });
+    }
+  };
+
   return (
     <div className="mx-auto flex w-full max-w-[1680px] flex-col gap-6 print:max-w-none">
       <section className="overflow-hidden rounded-lg border border-primary/25 bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.18),transparent_32%),linear-gradient(135deg,hsl(var(--card)),hsl(var(--muted)/0.18))] glow-card">
@@ -198,13 +249,17 @@ export default function Mistura90Excel() {
               transportadores, misturador, dosador, selecoes mecanicas e relatorio final de componentes.
             </p>
             <div className="mt-5 flex flex-wrap gap-3 print:hidden">
-              <Button type="button" onClick={copyReport} className="bg-primary text-primary-foreground hover:bg-highlight-glow">
+              <Button type="button" onClick={exportPdf} className="bg-primary text-primary-foreground hover:bg-highlight-glow">
+                <FileDown className="mr-2 h-4 w-4" />
+                Gerar PDF i9TMG
+              </Button>
+              <Button type="button" variant="outline" onClick={copyReport} className="border-border bg-muted/25">
                 <ClipboardCopy className="mr-2 h-4 w-4" />
                 Copiar relatorio
               </Button>
               <Button type="button" variant="outline" onClick={exportReport} className="border-border bg-muted/25">
                 <Download className="mr-2 h-4 w-4" />
-                Baixar TXT
+                TXT tecnico
               </Button>
               <Button type="button" variant="outline" onClick={exportCsv} className="border-border bg-muted/25">
                 <FileSpreadsheet className="mr-2 h-4 w-4" />
@@ -278,9 +333,15 @@ export default function Mistura90Excel() {
       </Card>
 
       <Tabs defaultValue="painel" className="space-y-4">
-        <TabsList className="grid h-auto w-full grid-cols-1 gap-2 bg-muted/20 p-1 sm:grid-cols-3 print:hidden">
+        <TabsList className="grid h-auto w-full grid-cols-1 gap-2 bg-muted/20 p-1 sm:grid-cols-2 lg:grid-cols-5 print:hidden">
           <TabsTrigger value="painel" className="min-h-10 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
             Painel executivo
+          </TabsTrigger>
+          <TabsTrigger value="dimensionador" className="min-h-10 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            Dimensionador
+          </TabsTrigger>
+          <TabsTrigger value="padrao-i9" className="min-h-10 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            Padrao i9TMG
           </TabsTrigger>
           <TabsTrigger value="memoria" className="min-h-10 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
             Memoria de calculo
@@ -417,6 +478,208 @@ export default function Mistura90Excel() {
           </section>
         </TabsContent>
 
+        <TabsContent value="dimensionador" className="space-y-4">
+          <section className="grid gap-4 xl:grid-cols-[0.92fr_1.08fr]">
+            <Card className="gradient-industrial glow-card border-border/60">
+              <CardHeader className="flex flex-col gap-3 border-b border-border/70 p-5 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Inputs do Excel</p>
+                  <CardTitle className="mt-1 text-xl text-foreground">Dimensionador parametrico i9TMG</CardTitle>
+                </div>
+                <Button type="button" variant="outline" onClick={resetScenario} className="w-fit border-border bg-muted/25">
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Recarregar padrao
+                </Button>
+              </CardHeader>
+              <CardContent className="space-y-5 p-5">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {(Object.keys(mistura90ScenarioLabels) as Mistura90ScenarioMode[]).map((mode) => (
+                    <button
+                      key={mode}
+                      type="button"
+                      onClick={() => changeScenarioMode(mode)}
+                      className={`rounded-lg border p-4 text-left transition-all duration-200 hover:-translate-y-0.5 ${
+                        scenarioMode === mode
+                          ? "border-primary/50 bg-primary/15 text-foreground"
+                          : "border-border/70 bg-background/35 text-muted-foreground hover:border-primary/35 hover:bg-muted/25"
+                      }`}
+                    >
+                      <p className="font-semibold">{mistura90ScenarioLabels[mode]}</p>
+                      <p className="mt-1 text-xs leading-relaxed">
+                        {mode === "elevador" && "Capacidade, material por metro, canecas e tensoes."}
+                        {mode === "peneira" && "Area requerida, area selecionada e rotacao."}
+                        {mode === "transportador" && "Capacidade pela area carregada e velocidade da correia."}
+                        {mode === "moinho" && "Energia especifica, potencia e rotacao do rotor."}
+                      </p>
+                    </button>
+                  ))}
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-2">
+                  {scenarioInputs.map((input) => (
+                    <label key={input.key} className="rounded-lg border border-border/70 bg-background/35 p-3">
+                      <span className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
+                        <span>{input.label}</span>
+                        <span className="font-mono text-primary">{input.unit || "coef."}</span>
+                      </span>
+                      <Input
+                        type="number"
+                        step={input.step || 0.01}
+                        value={input.value}
+                        onChange={(event) => updateScenarioInput(input.key, event.target.value)}
+                        className="mt-2 h-10 border-border/70 bg-background/65 font-mono"
+                      />
+                    </label>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="grid gap-4">
+              <Card className="gradient-industrial glow-card border-primary/20">
+                <CardHeader className="border-b border-border/70 p-5">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Resultado calculado</p>
+                  <CardTitle className="mt-1 text-xl text-foreground">{scenarioResult.title}</CardTitle>
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{scenarioResult.source}</p>
+                </CardHeader>
+                <CardContent className="space-y-5 p-5">
+                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                    {scenarioResult.outputs.map((output) => (
+                      <ScenarioOutputCard key={output.key} output={output} />
+                    ))}
+                  </div>
+
+                  {scenarioResult.warnings.length > 0 ? (
+                    <div className="rounded-lg border border-warning/30 bg-warning/10 p-4">
+                      <p className="flex items-center gap-2 text-sm font-semibold text-warning">
+                        <AlertTriangle className="h-4 w-4" />
+                        Alertas de engenharia
+                      </p>
+                      <div className="mt-3 space-y-2">
+                        {scenarioResult.warnings.map((warning) => (
+                          <p key={warning} className="text-sm leading-relaxed text-muted-foreground">
+                            {warning}
+                          </p>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="rounded-lg border border-success/30 bg-success/10 p-4 text-sm text-success">
+                      Parametros consistentes para emissao preliminar do relatorio.
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card className="gradient-industrial glow-card border-border/60">
+                <CardHeader className="border-b border-border/70 p-5">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Passo a passo</p>
+                  <CardTitle className="mt-1 text-xl text-foreground">Como o resultado foi gerado</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3 p-5">
+                  {scenarioResult.steps.map((step, index) => (
+                    <div key={step} className="grid grid-cols-[36px_1fr] gap-3 rounded-lg border border-border/70 bg-background/35 p-3">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/15 font-mono text-sm font-semibold text-primary">
+                        {index + 1}
+                      </div>
+                      <p className="font-mono text-sm leading-relaxed text-muted-foreground">{step}</p>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            </div>
+          </section>
+        </TabsContent>
+
+        <TabsContent value="padrao-i9" className="space-y-4">
+          <section className="grid gap-4 xl:grid-cols-[1fr_0.78fr]">
+            <Card className="gradient-industrial glow-card border-border/60">
+              <CardHeader className="border-b border-border/70 p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Aderencia institucional</p>
+                <CardTitle className="mt-1 text-xl text-foreground">Segmentos i9TMG dentro do sistema</CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-3 p-5 md:grid-cols-2 xl:grid-cols-3">
+                {i9Segments.map((segment) => (
+                  <div key={segment.id} className="group rounded-lg border border-border/70 bg-background/35 p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/35 hover:bg-muted/25">
+                    <div className="flex items-center gap-2">
+                      <Building2 className="h-4 w-4 text-primary" />
+                      <p className="font-semibold text-foreground">{segment.name}</p>
+                    </div>
+                    <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-muted-foreground">{segment.focus}</p>
+                    <div className="mt-3 flex flex-wrap gap-1.5">
+                      {segment.equipmentFit.slice(0, 3).map((fit) => (
+                        <Badge key={fit} variant="outline" className="border-primary/20 bg-primary/10 text-primary">
+                          {fit}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
+            <Card className="gradient-industrial glow-card border-primary/20">
+              <CardHeader className="border-b border-border/70 p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Evolucao i9TMG</p>
+                <CardTitle className="mt-1 text-xl text-foreground">Linha do tempo aplicada</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 p-5">
+                {i9CompanyTimeline.map((item) => (
+                  <div key={item.year} className="grid grid-cols-[58px_1fr] gap-3 rounded-lg border border-border/70 bg-background/35 p-3">
+                    <span className="font-mono text-sm font-semibold text-primary">{item.year}</span>
+                    <span className="text-sm leading-relaxed text-muted-foreground">{item.event}</span>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </section>
+
+          <section className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
+            <Card className="gradient-industrial glow-card border-border/60">
+              <CardHeader className="border-b border-border/70 p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Frentes de solucao</p>
+                <CardTitle className="mt-1 text-xl text-foreground">Como o modulo conversa com a i9TMG</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 p-5">
+                {i9SolutionFronts.map((front) => (
+                  <div key={front.name} className="rounded-lg border border-border/70 bg-background/35 p-4 transition-all duration-200 hover:border-primary/35 hover:bg-muted/20">
+                    <div className="flex items-center gap-2">
+                      <Layers className="h-4 w-4 text-primary" />
+                      <p className="font-semibold text-foreground">{front.name}</p>
+                    </div>
+                    <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{front.description}</p>
+                    <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                      {front.deliverables.map((deliverable) => (
+                        <div key={deliverable} className="rounded-md bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
+                          {deliverable}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
+            <Card className="gradient-industrial glow-card border-border/60">
+              <CardHeader className="border-b border-border/70 p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Requisitos do projeto</p>
+                <CardTitle className="mt-1 text-xl text-foreground">Qualidade, UX e operacao</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 p-5">
+                {i9QualityRequirements.map((requirement) => (
+                  <div key={requirement.name} className="grid gap-3 rounded-lg border border-border/70 bg-background/35 p-4 md:grid-cols-[180px_1fr]">
+                    <p className="flex items-center gap-2 font-semibold text-foreground">
+                      <Target className="h-4 w-4 text-primary" />
+                      {requirement.name}
+                    </p>
+                    <p className="text-sm leading-relaxed text-muted-foreground">{requirement.application}</p>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </section>
+        </TabsContent>
+
         <TabsContent value="memoria" className="space-y-4">
           <section className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
             <Card className="gradient-industrial glow-card border-border/60">
@@ -491,9 +754,15 @@ export default function Mistura90Excel() {
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Saida tecnica</p>
                 <CardTitle className="mt-1 text-xl text-foreground">Lista de materiais e selecoes</CardTitle>
               </div>
-              <Badge variant="outline" className="w-fit border-primary/25 bg-primary/10 text-primary">
-                {filteredReportItems.length} linhas filtradas
-              </Badge>
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="outline" className="w-fit border-primary/25 bg-primary/10 text-primary">
+                  {filteredReportItems.length} linhas filtradas
+                </Badge>
+                <Button type="button" onClick={exportPdf} className="h-9 bg-primary text-primary-foreground hover:bg-highlight-glow">
+                  <FileDown className="mr-2 h-4 w-4" />
+                  PDF
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="p-0">
               <div className="w-full overflow-x-auto">
@@ -567,7 +836,7 @@ export default function Mistura90Excel() {
               <ConclusionCard
                 icon={Settings2}
                 title="Relatorio operacional"
-                text="A saida pode ser copiada, exportada em CSV/TXT ou impressa como relatorio tecnico para conferencia e suprimentos."
+                text="A saida gera PDF com identidade i9TMG, graficos, tabelas, checklist, pendencias e rastreabilidade tecnica."
               />
             </CardContent>
           </Card>
@@ -583,6 +852,24 @@ function HeroMetric({ icon: Icon, label, value }: { icon: LucideIcon; label: str
       <Icon className="h-5 w-5 text-primary" />
       <p className="mt-3 break-words font-mono text-2xl font-semibold text-foreground">{value}</p>
       <p className="mt-1 text-xs text-muted-foreground">{label}</p>
+    </div>
+  );
+}
+
+function ScenarioOutputCard({ output }: { output: { label: string; value: number; unit: string; status?: string } }) {
+  const className =
+    output.status === "critical"
+      ? "border-destructive/30 bg-destructive/10 text-destructive"
+      : output.status === "warning"
+        ? "border-warning/30 bg-warning/10 text-warning"
+        : "border-success/30 bg-success/10 text-success";
+
+  return (
+    <div className={`rounded-lg border p-4 ${className}`}>
+      <p className="text-xs font-medium opacity-85">{output.label}</p>
+      <p className="mt-2 break-words font-mono text-2xl font-semibold">
+        {formatScenarioValue(output.value)} <span className="text-sm">{output.unit}</span>
+      </p>
     </div>
   );
 }
