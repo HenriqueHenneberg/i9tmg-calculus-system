@@ -6,6 +6,9 @@ export interface Mistura90ScenarioInput {
   unit: string;
   value: number;
   step?: number;
+  min?: number;
+  max?: number;
+  useCase?: string;
 }
 
 export interface Mistura90ScenarioOutput {
@@ -26,6 +29,12 @@ export interface Mistura90ScenarioResult {
   warnings: string[];
 }
 
+export interface Mistura90ScenarioValidation {
+  isValid: boolean;
+  errors: string[];
+  fieldErrors: Record<string, string>;
+}
+
 export const mistura90ScenarioLabels: Record<Mistura90ScenarioMode, string> = {
   elevador: "Elevador de canecas",
   peneira: "Peneira rotativa/vibratoria",
@@ -35,48 +44,48 @@ export const mistura90ScenarioLabels: Record<Mistura90ScenarioMode, string> = {
 
 export const mistura90ScenarioPresets: Record<Mistura90ScenarioMode, Mistura90ScenarioInput[]> = {
   elevador: [
-    { key: "V", label: "Volume da caneca", unit: "L", value: 11.99, step: 0.01 },
-    { key: "n", label: "Numero de fileiras", unit: "un", value: 1, step: 1 },
-    { key: "v", label: "Velocidade da correia", unit: "m/s", value: 1.525, step: 0.001 },
-    { key: "CF1", label: "Coef. enchimento", unit: "", value: 0.754, step: 0.001 },
-    { key: "CF2", label: "Coef. homogeneidade", unit: "", value: 1, step: 0.01 },
-    { key: "gamma", label: "Peso especifico", unit: "t/m3", value: 1, step: 0.01 },
-    { key: "e", label: "Passo das canecas", unit: "mm", value: 310, step: 1 },
-    { key: "H", label: "Altura do elevador", unit: "m", value: 20.6, step: 0.1 },
-    { key: "D", label: "Diametro do tambor", unit: "m", value: 0.62, step: 0.001 },
-    { key: "k", label: "Fator dinamico", unit: "", value: 0.85, step: 0.01 },
+    { key: "V", label: "Volume da caneca", unit: "L", value: 11.99, step: 0.01, min: 0.1, max: 80, useCase: "Canecas pequenas a industriais." },
+    { key: "n", label: "Numero de fileiras", unit: "un", value: 1, step: 1, min: 1, max: 4, useCase: "Normalmente 1 a 2 fileiras." },
+    { key: "v", label: "Velocidade da correia", unit: "m/s", value: 1.525, step: 0.001, min: 0.1, max: 4, useCase: "Elevadores de canecas com operacao continua." },
+    { key: "CF1", label: "Coef. enchimento", unit: "", value: 0.754, step: 0.001, min: 0.1, max: 1, useCase: "Coeficiente percentual em decimal." },
+    { key: "CF2", label: "Coef. homogeneidade", unit: "", value: 1, step: 0.01, min: 0.1, max: 1.5, useCase: "Ajuste de material e alimentacao." },
+    { key: "gamma", label: "Peso especifico", unit: "t/m3", value: 1, step: 0.01, min: 0.1, max: 3, useCase: "Densidade aparente do material." },
+    { key: "e", label: "Passo das canecas", unit: "mm", value: 310, step: 1, min: 50, max: 1000, useCase: "Distancia entre canecas." },
+    { key: "H", label: "Altura do elevador", unit: "m", value: 20.6, step: 0.1, min: 1, max: 80, useCase: "Altura entre centros/tambores." },
+    { key: "D", label: "Diametro do tambor", unit: "m", value: 0.62, step: 0.001, min: 0.1, max: 3, useCase: "Tambor motriz/esticador." },
+    { key: "k", label: "Fator dinamico", unit: "", value: 0.85, step: 0.01, min: 0, max: 3, useCase: "Fator dinamico de tensao." },
   ],
   peneira: [
-    { key: "Q", label: "Alimentacao", unit: "t/h", value: 160, step: 1 },
-    { key: "Cunit", label: "Capacidade unitaria", unit: "t/h.m2", value: 21, step: 0.1 },
-    { key: "F1", label: "Fator granulometria", unit: "", value: 0.9048, step: 0.0001 },
-    { key: "F2", label: "Fator abertura", unit: "", value: 2, step: 0.01 },
-    { key: "F3", label: "Fator material", unit: "", value: 1.15, step: 0.01 },
-    { key: "F4", label: "Fator deck", unit: "", value: 1, step: 0.01 },
-    { key: "F5", label: "Fator umidade", unit: "", value: 1, step: 0.01 },
-    { key: "F6", label: "Fator eficiencia", unit: "", value: 1.1, step: 0.01 },
-    { key: "D", label: "Diametro da gaiola", unit: "m", value: 1.25, step: 0.01 },
-    { key: "L", label: "Largura/comprimento util", unit: "m", value: 2.9, step: 0.01 },
-    { key: "rpmFactor", label: "Fator de rotacao", unit: "", value: 0.45, step: 0.01 },
+    { key: "Q", label: "Alimentacao", unit: "t/h", value: 160, step: 1, min: 0.1, max: 600, useCase: "Taxa de alimentacao da peneira." },
+    { key: "Cunit", label: "Capacidade unitaria", unit: "t/h.m2", value: 21, step: 0.1, min: 0.1, max: 120, useCase: "Capacidade por area util." },
+    { key: "F1", label: "Fator granulometria", unit: "", value: 0.9048, step: 0.0001, min: 0.1, max: 3, useCase: "Fator tecnico em decimal." },
+    { key: "F2", label: "Fator abertura", unit: "", value: 2, step: 0.01, min: 0.1, max: 5, useCase: "Ajuste da abertura de tela." },
+    { key: "F3", label: "Fator material", unit: "", value: 1.15, step: 0.01, min: 0.1, max: 5, useCase: "Comportamento do material." },
+    { key: "F4", label: "Fator deck", unit: "", value: 1, step: 0.01, min: 0.1, max: 5, useCase: "Numero/arranjo de decks." },
+    { key: "F5", label: "Fator umidade", unit: "", value: 1, step: 0.01, min: 0.1, max: 5, useCase: "Umidade e aderencia." },
+    { key: "F6", label: "Fator eficiencia", unit: "", value: 1.1, step: 0.01, min: 0.1, max: 5, useCase: "Eficiencia operacional." },
+    { key: "D", label: "Diametro da gaiola", unit: "m", value: 1.25, step: 0.01, min: 0.2, max: 5, useCase: "Diametro estrutural da peneira." },
+    { key: "L", label: "Largura/comprimento util", unit: "m", value: 2.9, step: 0.01, min: 0.2, max: 10, useCase: "Area util de peneiramento." },
+    { key: "rpmFactor", label: "Fator de rotacao", unit: "", value: 0.45, step: 0.01, min: 0.1, max: 0.8, useCase: "Percentual da rotacao critica." },
   ],
   transportador: [
-    { key: "S", label: "Area carregada", unit: "m2", value: 0.05498, step: 0.0001 },
-    { key: "v", label: "Velocidade da correia", unit: "m/s", value: 1.08, step: 0.01 },
-    { key: "gamma", label: "Densidade aparente", unit: "t/m3", value: 0.9, step: 0.01 },
-    { key: "eta", label: "Fator de enchimento", unit: "", value: 1, step: 0.01 },
-    { key: "projectFactor", label: "Fator de projeto", unit: "", value: 1.56, step: 0.01 },
-    { key: "B", label: "Largura da correia", unit: "pol", value: 30, step: 1 },
-    { key: "L", label: "Comprimento estimado", unit: "m", value: 16, step: 1 },
+    { key: "S", label: "Area carregada", unit: "m2", value: 0.05498, step: 0.0001, min: 0.001, max: 1.5, useCase: "Area de carga sobre a correia." },
+    { key: "v", label: "Velocidade da correia", unit: "m/s", value: 1.08, step: 0.01, min: 0.1, max: 5, useCase: "Velocidade operacional." },
+    { key: "gamma", label: "Densidade aparente", unit: "t/m3", value: 0.9, step: 0.01, min: 0.1, max: 3, useCase: "Densidade aparente do material." },
+    { key: "eta", label: "Fator de enchimento", unit: "", value: 1, step: 0.01, min: 0.1, max: 1.5, useCase: "Fator de enchimento em decimal." },
+    { key: "projectFactor", label: "Fator de projeto", unit: "", value: 1.56, step: 0.01, min: 1, max: 3, useCase: "Reserva de projeto." },
+    { key: "B", label: "Largura da correia", unit: "pol", value: 30, step: 1, min: 12, max: 96, useCase: "Largura comercial da correia." },
+    { key: "L", label: "Comprimento estimado", unit: "m", value: 16, step: 1, min: 1, max: 300, useCase: "Comprimento linear do transportador." },
   ],
   moinho: [
-    { key: "Wi", label: "Indice de trabalho", unit: "kWh/t", value: 11.61, step: 0.01 },
-    { key: "d1", label: "Produto final", unit: "mm", value: 5, step: 0.1 },
-    { key: "d0", label: "Produto inicial", unit: "mm", value: 35, step: 0.1 },
-    { key: "T", label: "Taxa de alimentacao", unit: "t/h", value: 8, step: 0.1 },
-    { key: "motorRpm", label: "Rotacao do motor", unit: "rpm", value: 1770, step: 1 },
-    { key: "poliaMotor", label: "Polia do motor", unit: "mm", value: 250, step: 1 },
-    { key: "poliaMaq", label: "Polia da maquina", unit: "mm", value: 200, step: 1 },
-    { key: "Fs", label: "Fator de servico", unit: "", value: 1.1, step: 0.01 },
+    { key: "Wi", label: "Indice de trabalho", unit: "kWh/t", value: 11.61, step: 0.01, min: 0.1, max: 50, useCase: "Indice de moagem do material." },
+    { key: "d1", label: "Produto final", unit: "mm", value: 5, step: 0.1, min: 0.05, max: 100, useCase: "Granulometria final desejada." },
+    { key: "d0", label: "Produto inicial", unit: "mm", value: 35, step: 0.1, min: 0.1, max: 500, useCase: "Granulometria de entrada." },
+    { key: "T", label: "Taxa de alimentacao", unit: "t/h", value: 8, step: 0.1, min: 0.1, max: 200, useCase: "Alimentacao do moinho." },
+    { key: "motorRpm", label: "Rotacao do motor", unit: "rpm", value: 1770, step: 1, min: 100, max: 3600, useCase: "Rotacao nominal do motor." },
+    { key: "poliaMotor", label: "Polia do motor", unit: "mm", value: 250, step: 1, min: 20, max: 2000, useCase: "Diametro da polia motora." },
+    { key: "poliaMaq", label: "Polia da maquina", unit: "mm", value: 200, step: 1, min: 20, max: 2000, useCase: "Diametro da polia movida." },
+    { key: "Fs", label: "Fator de servico", unit: "", value: 1.1, step: 0.01, min: 1, max: 3, useCase: "Margem de servico mecanico." },
   ],
 };
 
@@ -91,6 +100,43 @@ export function cloneScenarioInputs(mode: Mistura90ScenarioMode) {
   return mistura90ScenarioPresets[mode].map((input) => ({ ...input }));
 }
 
+export function zeroScenarioInputs(inputs: Mistura90ScenarioInput[]) {
+  return inputs.map((input) => ({ ...input, value: 0 }));
+}
+
+export function validateMistura90ScenarioInputs(mode: Mistura90ScenarioMode, inputs: Mistura90ScenarioInput[]): Mistura90ScenarioValidation {
+  const fieldErrors: Record<string, string> = {};
+
+  inputs.forEach((input) => {
+    if (!Number.isFinite(input.value)) {
+      fieldErrors[input.key] = `${input.label} precisa ser um numero valido.`;
+      return;
+    }
+
+    if (input.min !== undefined && input.value < input.min) {
+      fieldErrors[input.key] = `${input.label} deve ser maior ou igual a ${format(input.min)} ${input.unit || ""}`.trim();
+      return;
+    }
+
+    if (input.max !== undefined && input.value > input.max) {
+      fieldErrors[input.key] = `${input.label} deve ser menor ou igual a ${format(input.max)} ${input.unit || ""}`.trim();
+    }
+  });
+
+  const values = Object.fromEntries(inputs.map((input) => [input.key, Number(input.value) || 0]));
+  if (mode === "moinho" && values.d1 >= values.d0) {
+    fieldErrors.d1 = "Produto final deve ser menor que o produto inicial.";
+    fieldErrors.d0 = "Produto inicial deve ser maior que o produto final.";
+  }
+
+  const errors = Object.values(fieldErrors);
+  return {
+    isValid: errors.length === 0,
+    errors,
+    fieldErrors,
+  };
+}
+
 export function calculateMistura90Scenario(mode: Mistura90ScenarioMode, inputs: Mistura90ScenarioInput[]): Mistura90ScenarioResult {
   const values = Object.fromEntries(inputs.map((input) => [input.key, Number(input.value) || 0]));
 
@@ -101,11 +147,12 @@ export function calculateMistura90Scenario(mode: Mistura90ScenarioMode, inputs: 
 }
 
 function calculateElevador(inputs: Mistura90ScenarioInput[], v: Record<string, number>): Mistura90ScenarioResult {
-  const q = (3600 * v.V * v.n * v.v * v.CF1 * v.CF2 * v.gamma) / v.e;
-  const pm = (1000 * v.n * v.gamma * v.V * v.CF1) / v.e;
+  const step = Math.max(v.e, 0.001);
+  const q = (3600 * v.V * v.n * v.v * v.CF1 * v.CF2 * v.gamma) / step;
+  const pm = (1000 * v.n * v.gamma * v.V * v.CF1) / step;
   const ca = Math.PI * v.D + 2 * v.H;
-  const n1 = (1000 * ca * v.n) / v.e;
-  const te = ((v.H + 12 * v.D) * pm) / Math.max(v.e / 1000, 0.001);
+  const n1 = (1000 * ca * v.n) / step;
+  const te = ((v.H + 12 * v.D) * pm) / Math.max(step / 1000, 0.001);
   const tm = (1 + v.k) * te;
   return {
     mode: "elevador",
@@ -198,8 +245,8 @@ function calculateTransportador(inputs: Mistura90ScenarioInput[], v: Record<stri
 }
 
 function calculateMoinho(inputs: Mistura90ScenarioInput[], v: Record<string, number>): Mistura90ScenarioResult {
-  const finalMicron = v.d1 * 1000;
-  const initialMicron = v.d0 * 1000;
+  const finalMicron = Math.max(v.d1 * 1000, 0.001);
+  const initialMicron = Math.max(v.d0 * 1000, 0.001);
   const energy = 10 * v.Wi * ((1 / Math.sqrt(finalMicron)) - (1 / Math.sqrt(initialMicron)));
   const tphShort = (v.T * 1000) / 907;
   const kw = energy * tphShort * v.Fs;

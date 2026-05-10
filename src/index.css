@@ -88,6 +88,42 @@
     --surface: 0 0% 100%;
     --surface-elevated: 206 28% 92%;
   }
+
+  :root[data-color-vision="protanopia"] {
+    --primary: 199 95% 52%;
+    --ring: 199 95% 52%;
+    --sidebar-primary: 199 95% 52%;
+    --highlight: 199 95% 52%;
+    --highlight-glow: 199 95% 60%;
+    --success: 168 70% 39%;
+    --warning: 48 95% 48%;
+    --info: 214 92% 62%;
+    --destructive: 266 72% 60%;
+  }
+
+  :root[data-color-vision="deuteranopia"] {
+    --primary: 212 94% 58%;
+    --ring: 212 94% 58%;
+    --sidebar-primary: 212 94% 58%;
+    --highlight: 212 94% 58%;
+    --highlight-glow: 212 94% 64%;
+    --success: 260 72% 64%;
+    --warning: 35 96% 52%;
+    --info: 195 90% 54%;
+    --destructive: 332 78% 58%;
+  }
+
+  :root[data-color-vision="tritanopia"] {
+    --primary: 338 82% 56%;
+    --ring: 338 82% 56%;
+    --sidebar-primary: 338 82% 56%;
+    --highlight: 338 82% 56%;
+    --highlight-glow: 338 82% 64%;
+    --success: 159 64% 38%;
+    --warning: 18 90% 54%;
+    --info: 280 70% 62%;
+    --destructive: 0 72% 55%;
+  }
 }
 
 @layer base {

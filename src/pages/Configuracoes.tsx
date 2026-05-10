@@ -1,4 +1,4 @@
-import { Bell, Moon, Save, ShieldCheck, SlidersHorizontal, Sun, type LucideIcon } from "lucide-react";
+import { Bell, Eye, Moon, Palette, Save, ShieldCheck, SlidersHorizontal, Sun, type LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -19,10 +19,44 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useIndustrialWorkspace } from "@/contexts/IndustrialWorkspaceContext";
+import type { ColorVisionMode } from "@/contexts/IndustrialWorkspaceContext";
 import type { SectorId } from "@/lib/industrial-data";
+
+const colorVisionOptions: Array<{
+  value: ColorVisionMode;
+  label: string;
+  description: string;
+  colors: string[];
+}> = [
+  {
+    value: "standard",
+    label: "Padrao i9TMG",
+    description: "Azul industrial com destaque laranja original.",
+    colors: ["#ff6a00", "#22c55e", "#f59e0b", "#38bdf8"],
+  },
+  {
+    value: "protanopia",
+    label: "Protanopia",
+    description: "Reduz dependencia de vermelho/laranja; prioriza ciano, azul e amarelo.",
+    colors: ["#14b8e8", "#14a085", "#e8b400", "#7c5cff"],
+  },
+  {
+    value: "deuteranopia",
+    label: "Deuteranopia",
+    description: "Evita contraste vermelho/verde; usa azul, violeta, ciano e amber.",
+    colors: ["#3b82f6", "#9f7aea", "#f59e0b", "#06b6d4"],
+  },
+  {
+    value: "tritanopia",
+    label: "Tritanopia",
+    description: "Evita depender de azul/amarelo; usa magenta, verde-petroleo e laranja.",
+    colors: ["#d94686", "#23946f", "#f97316", "#b45ce2"],
+  },
+];
 
 export default function Configuracoes() {
   const { userName, setUserName, sectors, preferences, updatePreferences } = useIndustrialWorkspace();
+  const activeColorVision = colorVisionOptions.find((option) => option.value === preferences.colorVisionMode) || colorVisionOptions[0];
 
   return (
     <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-6">
@@ -131,11 +165,32 @@ export default function Configuracoes() {
                   description="Reduz espacamentos em tabelas e paineis de uso recorrente."
                   control={<Switch checked={preferences.compactMode} onCheckedChange={(compactMode) => updatePreferences({ compactMode })} />}
                 />
-                <div className="grid grid-cols-4 gap-3">
-                  <Swatch label="Fundo" className="bg-[#0A2540]" />
-                  <Swatch label="Container" className="bg-[#112D44]" />
-                  <Swatch label="Petroleo" className="bg-[#163B4F]" />
-                  <Swatch label="Destaque" className="bg-[#ff6a00]" />
+                <SettingRow
+                  icon={Eye}
+                  title="Perfil para daltonismo"
+                  description={activeColorVision.description}
+                  control={
+                    <Select
+                      value={preferences.colorVisionMode}
+                      onValueChange={(colorVisionMode) => updatePreferences({ colorVisionMode: colorVisionMode as ColorVisionMode })}
+                    >
+                      <SelectTrigger className="w-full min-w-[190px] border-border bg-muted/25 text-foreground sm:w-[230px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {colorVisionOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  }
+                />
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  {activeColorVision.colors.map((color, index) => (
+                    <Swatch key={`${activeColorVision.value}-${color}`} label={["Primaria", "OK", "Atencao", "Info"][index] || "Apoio"} color={color} />
+                  ))}
                 </div>
               </CardContent>
             </Card>
@@ -147,7 +202,10 @@ export default function Configuracoes() {
               </CardHeader>
               <CardContent className="p-5">
                 <div className="rounded-lg border border-primary/25 bg-primary/10 p-5">
-                  <p className="text-xs uppercase tracking-[0.16em] text-primary">Resultado</p>
+                  <div className="flex items-center gap-2 text-xs uppercase tracking-[0.16em] text-primary">
+                    <Palette className="h-4 w-4" />
+                    Resultado
+                  </div>
                   <p className="mt-3 font-mono text-4xl font-semibold text-primary">45.0000</p>
                   <p className="text-sm text-muted-foreground">N.m</p>
                   <div className="mt-5 rounded-lg border border-border/70 bg-background/45 p-4">
@@ -264,12 +322,12 @@ function SettingRow({
   control: ReactNode;
 }) {
   return (
-    <div className="flex items-center justify-between gap-4 rounded-lg border border-border/70 bg-muted/20 p-4">
-      <div className="flex items-start gap-3">
+    <div className="flex flex-col gap-4 rounded-lg border border-border/70 bg-muted/20 p-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex min-w-0 items-start gap-3">
         <div className="rounded-md border border-primary/25 bg-primary/10 p-2 text-primary">
           <Icon className="h-4 w-4" />
         </div>
-        <div>
+        <div className="min-w-0">
           <p className="text-sm font-semibold text-foreground">{title}</p>
           <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{description}</p>
         </div>
@@ -279,10 +337,10 @@ function SettingRow({
   );
 }
 
-function Swatch({ label, className }: { label: string; className: string }) {
+function Swatch({ label, color }: { label: string; color: string }) {
   return (
     <div className="rounded-lg border border-border/70 bg-muted/20 p-3">
-      <div className={`h-10 rounded-md border border-white/10 ${className}`} />
+      <div className="h-10 rounded-md border border-white/10" style={{ backgroundColor: color }} />
       <p className="mt-2 text-xs text-muted-foreground">{label}</p>
     </div>
   );

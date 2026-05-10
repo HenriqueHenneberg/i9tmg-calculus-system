@@ -15,12 +15,15 @@ export interface WorkspacePreferences {
   compactMode: boolean;
   notifications: boolean;
   darkTheme: boolean;
+  colorVisionMode: ColorVisionMode;
   autoSaveHistory: boolean;
   defaultSector: SectorId;
   jobTitle: string;
   email: string;
   unit: string;
 }
+
+export type ColorVisionMode = "standard" | "protanopia" | "deuteranopia" | "tritanopia";
 
 interface StoredWorkspace {
   userName: string;
@@ -64,6 +67,7 @@ const initialWorkspace: StoredWorkspace = {
     compactMode: false,
     notifications: true,
     darkTheme: true,
+    colorVisionMode: "standard",
     autoSaveHistory: true,
     defaultSector: "mecanica",
     jobTitle: "Engenharia Industrial",
@@ -92,7 +96,8 @@ export function IndustrialWorkspaceProvider({ children }: { children: ReactNode 
   useEffect(() => {
     document.documentElement.dataset.compact = String(workspace.preferences.compactMode);
     document.documentElement.dataset.theme = workspace.preferences.darkTheme ? "dark" : "light";
-  }, [workspace.preferences.compactMode, workspace.preferences.darkTheme]);
+    document.documentElement.dataset.colorVision = workspace.preferences.colorVisionMode;
+  }, [workspace.preferences.colorVisionMode, workspace.preferences.compactMode, workspace.preferences.darkTheme]);
 
   const formulas = useMemo(() => {
     const catalogWithOverrides = catalogFormulas.map((formula) => normalizeFormula(workspace.formulaOverrides[formula.id] || formula));

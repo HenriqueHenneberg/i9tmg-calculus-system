@@ -5,6 +5,7 @@ import {
   CheckCircle2,
   ClipboardCopy,
   Download,
+  Eraser,
   Factory,
   FileDown,
   FileSpreadsheet,
@@ -72,13 +73,22 @@ import {
   formatScenarioValue,
   inferMistura90Scenario,
   mistura90ScenarioLabels,
+  validateMistura90ScenarioInputs,
+  zeroScenarioInputs,
   type Mistura90ScenarioInput,
   type Mistura90ScenarioMode,
   type Mistura90ScenarioResult,
 } from "@/lib/mistura90-calculations";
 import { i9CompanyTimeline, i9QualityRequirements, i9Segments, i9SolutionFronts } from "@/lib/i9-requirements";
 
-const chartColors = ["#ff6a00", "#38bdf8", "#22c55e", "#f59e0b", "#a855f7", "#94a3b8"];
+const chartColors = [
+  "hsl(var(--primary))",
+  "hsl(var(--info))",
+  "hsl(var(--success))",
+  "hsl(var(--warning))",
+  "hsl(var(--destructive))",
+  "hsl(var(--muted-foreground))",
+];
 
 const tooltipStyle = {
   background: "hsl(var(--card))",
@@ -102,6 +112,7 @@ export default function Mistura90Excel() {
   const [scenarioMode, setScenarioMode] = useState<Mistura90ScenarioMode>(() => inferMistura90Scenario(selectedEquipment.type));
   const [scenarioInputs, setScenarioInputs] = useState<Mistura90ScenarioInput[]>(() => cloneScenarioInputs(inferMistura90Scenario(selectedEquipment.type)));
   const scenarioResult = useMemo(() => calculateMistura90Scenario(scenarioMode, scenarioInputs), [scenarioInputs, scenarioMode]);
+  const scenarioValidation = useMemo(() => validateMistura90ScenarioInputs(scenarioMode, scenarioInputs), [scenarioInputs, scenarioMode]);
 
   useEffect(() => {
     const nextMode = inferMistura90Scenario(selectedEquipment.type);
@@ -184,6 +195,11 @@ export default function Mistura90Excel() {
     toast.success("Parametros padrao recarregados.");
   };
 
+  const clearScenario = () => {
+    setScenarioInputs((current) => zeroScenarioInputs(current));
+    toast.info("Numeros zerados. Preencha valores dentro dos limites para liberar o PDF.");
+  };
+
   const copyReport = async () => {
     try {
       await navigator.clipboard.writeText(reportText);
@@ -223,6 +239,12 @@ export default function Mistura90Excel() {
   };
 
   const exportPdf = async () => {
+    if (!scenarioValidation.isValid) {
+      setActiveTab("dimensionador");
+      toast.error("Corrija os numeros fora dos limites antes de gerar o PDF.");
+      return;
+    }
+
     const toastId = toast.loading("Gerando PDF tecnico i9TMG...");
     try {
       const { generateMistura90PdfReport } = await import("@/lib/mistura90-pdf");
@@ -505,10 +527,16 @@ export default function Mistura90Excel() {
                   <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Inputs do Excel</p>
                   <CardTitle className="mt-1 text-xl text-foreground">Preenchimento do relatorio tecnico</CardTitle>
                 </div>
-                <Button type="button" variant="outline" onClick={resetScenario} className="w-fit border-border bg-muted/25">
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  Recarregar padrao
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                  <Button type="button" variant="outline" onClick={resetScenario} className="border-border bg-muted/25">
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Recarregar padrao
+                  </Button>
+                  <Button type="button" variant="outline" onClick={clearScenario} className="border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/15">
+                    <Eraser className="mr-2 h-4 w-4" />
+                    Zerar numeros
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent className="space-y-5 p-5">
                 <div className="rounded-lg border border-primary/30 bg-primary/10 p-4">
@@ -565,7 +593,14 @@ export default function Mistura90Excel() {
                   <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Numeros de entrada</p>
                 <div className="grid gap-3 md:grid-cols-2">
                   {scenarioInputs.map((input) => (
-                    <label key={input.key} className="rounded-lg border border-border/70 bg-background/35 p-3">
+                    <label
+                      key={input.key}
+                      className={`rounded-lg border bg-background/35 p-3 transition-colors ${
+                        scenarioValidation.fieldErrors[input.key]
+                          ? "border-destructive/60 bg-destructive/10"
+                          : "border-border/70"
+                      }`}
+                    >
                       <span className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
                         <span>{input.label}</span>
                         <span className="font-mono text-primary">{input.unit || "coef."}</span>
@@ -575,8 +610,22 @@ export default function Mistura90Excel() {
                         step={input.step || 0.01}
                         value={input.value}
                         onChange={(event) => updateScenarioInput(input.key, event.target.value)}
-                        className="mt-2 h-10 border-border/70 bg-background/65 font-mono"
+                        aria-invalid={Boolean(scenarioValidation.fieldErrors[input.key])}
+                        className={`mt-2 h-10 bg-background/65 font-mono ${
+                          scenarioValidation.fieldErrors[input.key]
+                            ? "border-destructive/70 focus-visible:ring-destructive/40"
+                            : "border-border/70"
+                        }`}
                       />
+                      <span className="mt-2 block text-[11px] leading-relaxed text-muted-foreground">
+                        Limite: {formatScenarioValue(input.min ?? 0)} a {formatScenarioValue(input.max ?? 999999)} {input.unit || "coef."}
+                        {input.useCase ? ` | Uso: ${input.useCase}` : ""}
+                      </span>
+                      {scenarioValidation.fieldErrors[input.key] ? (
+                        <span className="mt-2 block text-xs leading-relaxed text-destructive">
+                          {scenarioValidation.fieldErrors[input.key]}
+                        </span>
+                      ) : null}
                     </label>
                   ))}
                 </div>
@@ -617,8 +666,28 @@ export default function Mistura90Excel() {
                       Parametros consistentes para emissao preliminar do relatorio.
                     </div>
                   )}
+                  {!scenarioValidation.isValid ? (
+                    <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-4">
+                      <p className="flex items-center gap-2 text-sm font-semibold text-destructive">
+                        <AlertTriangle className="h-4 w-4" />
+                        PDF bloqueado por entrada fora da faixa
+                      </p>
+                      <div className="mt-3 space-y-2">
+                        {scenarioValidation.errors.slice(0, 5).map((error) => (
+                          <p key={error} className="text-sm leading-relaxed text-muted-foreground">
+                            {error}
+                          </p>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <Button type="button" onClick={exportPdf} className="bg-primary text-primary-foreground hover:bg-highlight-glow">
+                    <Button
+                      type="button"
+                      onClick={exportPdf}
+                      disabled={!scenarioValidation.isValid}
+                      className="bg-primary text-primary-foreground hover:bg-highlight-glow disabled:cursor-not-allowed disabled:opacity-60"
+                    >
                       <FileDown className="mr-2 h-4 w-4" />
                       Gerar PDF com estes numeros
                     </Button>
