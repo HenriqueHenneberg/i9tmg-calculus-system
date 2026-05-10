@@ -36,7 +36,7 @@ export async function generateMistura90PdfReport({ selectedEquipment, scenario }
   doc.setTextColor(...slate);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
-  doc.text("Equipamentos Mistura 90 | Engenharia, memoria de calculo, suprimentos e liberacao tecnica", 14, 41);
+  doc.text("Projeto Mistura 90 | Engenharia, memoria de calculo, suprimentos e liberacao tecnica", 14, 41);
 
   drawInfoGrid(doc, [
     ["Fonte", mistura90Workbook.fileName],

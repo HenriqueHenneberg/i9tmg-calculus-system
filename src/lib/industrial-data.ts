@@ -264,9 +264,9 @@ const baseSectors: BaseSector[] = [
   },
   {
     id: "equipamentos_mistura_90",
-    name: "Equipamentos Mistura 90",
+    name: "Projeto Mistura 90",
     description:
-      "Modulo tecnico digitalizado da planilha Calculos Equipamentos Mistura 90 (2), cobrindo elevadores, peneiras, moinho, transportadores, misturador, dosador, resumo de materiais e relatorio final.",
+      "Setor do projeto tecnico digitalizado da planilha Calculos Equipamentos Mistura 90 (2), cobrindo elevadores, peneiras, moinho, transportadores, misturador, dosador, resumo de materiais e relatorio final.",
     activeCalculations: 58,
     health: 89,
     trend: "+24%",
@@ -276,9 +276,9 @@ const baseSectors: BaseSector[] = [
   },
   {
     id: "elevadores_mistura_90",
-    name: "Elevadores e Mistura 90",
+    name: "Elevadores Industriais",
     description:
-      "Setor técnico voltado aos cálculos de elevadores industriais, capacidade de transporte, tensões, correias, eixos, potência, redutores, acoplamentos e rolamentos, baseado no documento técnico Calculos Equipamentos Mistura 90.",
+      "Biblioteca tecnica para calculos de elevadores industriais, capacidade de transporte, tensoes, correias, eixos, potencia, redutores, acoplamentos e rolamentos, baseada no documento tecnico Calculos Equipamentos Mistura 90.",
     activeCalculations: 42,
     health: 91,
     trend: "+18%",

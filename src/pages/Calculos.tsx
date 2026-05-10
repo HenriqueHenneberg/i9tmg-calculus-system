@@ -224,7 +224,7 @@ export default function Calculos() {
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Destaque tecnico</p>
-            <h2 className="mt-1 text-lg font-semibold text-foreground">Elevadores e Mistura 90</h2>
+            <h2 className="mt-1 text-lg font-semibold text-foreground">Elevadores Industriais</h2>
             <p className="mt-1 text-sm text-muted-foreground">
               Calculos de capacidade, correias, tensoes, eixos, potencia, redutores, acoplamentos e rolamentos.
             </p>
@@ -235,7 +235,7 @@ export default function Calculos() {
             onClick={() => setSelectedSector("elevadores_mistura_90")}
             className="border-primary/30 bg-background/30 text-foreground hover:bg-primary hover:text-primary-foreground"
           >
-            Ver formulas do PDF
+            Ver formulas de elevadores
           </Button>
         </div>
       </section>

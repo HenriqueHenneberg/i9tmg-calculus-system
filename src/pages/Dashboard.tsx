@@ -129,7 +129,7 @@ export default function Dashboard() {
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Setor especial</p>
-              <h2 className="mt-2 text-2xl font-semibold text-foreground">Elevadores e Mistura 90</h2>
+              <h2 className="mt-2 text-2xl font-semibold text-foreground">Elevadores Industriais</h2>
               <p className="mt-2 max-w-3xl text-sm leading-relaxed text-muted-foreground">{mistura90Sector.description}</p>
             </div>
             <div className="grid grid-cols-1 gap-3 text-center sm:grid-cols-3">
@@ -148,7 +148,7 @@ export default function Dashboard() {
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Planilha tecnica convertida</p>
               <h2 className="mt-2 flex flex-wrap items-center gap-3 text-2xl font-semibold text-foreground">
                 <FileSpreadsheet className="h-6 w-6 text-primary" />
-                Equipamentos Mistura 90
+                Projeto Mistura 90
               </h2>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                 {equipamentosMistura90Sector.description} Fonte: {mistura90Workbook.fileName}.
@@ -166,7 +166,7 @@ export default function Dashboard() {
               className="h-11 shrink-0 bg-primary text-primary-foreground hover:bg-highlight-glow"
             >
               <PackageCheck className="mr-2 h-4 w-4" />
-              Abrir modulo Excel
+              Abrir Projeto M90
             </Button>
           </div>
         </section>

@@ -242,7 +242,7 @@ export default function Mistura90Excel() {
               </Badge>
             </div>
             <h1 className="mt-4 text-balance text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
-              Equipamentos Mistura 90
+              Projeto Mistura 90
             </h1>
             <p className="mt-3 max-w-3xl text-sm leading-relaxed text-muted-foreground md:text-base">
               Modulo tecnico baseado no arquivo {mistura90Workbook.fileName}: elevadores, peneiras, moinho,
@@ -949,7 +949,7 @@ function ReportCover({ kpis }: { kpis: ReturnType<typeof getMistura90Kpis> }) {
       <CardContent className="grid gap-5 p-5 lg:grid-cols-[1fr_0.82fr]">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Relatorio tecnico de saida</p>
-          <h2 className="mt-2 text-2xl font-semibold text-foreground">Resumo executivo para Equipamentos Mistura 90</h2>
+          <h2 className="mt-2 text-2xl font-semibold text-foreground">Resumo executivo do Projeto Mistura 90</h2>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
             Documento consolidado a partir da aba RESUMO e das memorias de calculo do Excel. A estrutura destaca
             equipamentos, listas de compra/fabricacao, componentes criticos, pendencias de desenho e indicadores de liberacao.

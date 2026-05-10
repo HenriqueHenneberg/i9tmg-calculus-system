@@ -34,7 +34,7 @@ const menuItems = [
   { title: "Formulas", url: "/formulas", icon: FlaskConical },
   { title: "Historico", url: "/historico", icon: History },
   { title: "Setores", url: "/setores", icon: Layers },
-  { title: "Mistura 90", url: "/mistura90-excel", icon: FileSpreadsheet },
+  { title: "Projeto M90", url: "/mistura90-excel", icon: FileSpreadsheet },
   { title: "Configuracoes", url: "/configuracoes", icon: Settings },
 ];
 
