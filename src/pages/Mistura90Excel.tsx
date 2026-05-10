@@ -74,6 +74,7 @@ import {
   mistura90ScenarioLabels,
   type Mistura90ScenarioInput,
   type Mistura90ScenarioMode,
+  type Mistura90ScenarioResult,
 } from "@/lib/mistura90-calculations";
 import { i9CompanyTimeline, i9QualityRequirements, i9Segments, i9SolutionFronts } from "@/lib/i9-requirements";
 
@@ -93,6 +94,8 @@ export default function Mistura90Excel() {
   const [query, setQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<Mistura90EquipmentType | "todos">("todos");
   const [criticalityFilter, setCriticalityFilter] = useState("todos");
+  const [activeTab, setActiveTab] = useState("dimensionador");
+  const [showFullReport, setShowFullReport] = useState(false);
 
   const selectedEquipment = getEquipmentById(selectedEquipmentId) || mistura90Equipments[0];
   const selectedItems = getReportItemsByEquipment(selectedEquipment.id);
@@ -128,6 +131,11 @@ export default function Mistura90Excel() {
         return matchesText && matchesType && matchesCriticality;
       }),
     [criticalityFilter, query, typeFilter],
+  );
+
+  const reportTableItems = useMemo(
+    () => (showFullReport ? filteredReportItems : filteredReportItems.filter((item) => item.equipmentId === selectedEquipment.id)),
+    [filteredReportItems, selectedEquipment.id, showFullReport],
   );
 
   const equipmentTypeData = useMemo(() => {
@@ -248,26 +256,37 @@ export default function Mistura90Excel() {
               Modulo tecnico baseado no arquivo {mistura90Workbook.fileName}: elevadores, peneiras, moinho,
               transportadores, misturador, dosador, selecoes mecanicas e relatorio final de componentes.
             </p>
+            <div className="mt-5 grid gap-3 md:grid-cols-3 print:hidden">
+              <WorkflowStepCard
+                index="1"
+                title="Preencher numeros"
+                text="Escolha o equipamento e ajuste os parametros do Excel."
+                active={activeTab === "dimensionador"}
+                onClick={() => setActiveTab("dimensionador")}
+              />
+              <WorkflowStepCard
+                index="2"
+                title="Conferir resultado"
+                text="Veja indicadores, alertas e memoria de calculo."
+                active={activeTab === "relatorio"}
+                onClick={() => setActiveTab("relatorio")}
+              />
+              <WorkflowStepCard
+                index="3"
+                title="Emitir PDF"
+                text="Gere o relatorio final com tabelas e rastreabilidade."
+                active={false}
+                onClick={exportPdf}
+              />
+            </div>
             <div className="mt-5 flex flex-wrap gap-3 print:hidden">
-              <Button type="button" onClick={exportPdf} className="bg-primary text-primary-foreground hover:bg-highlight-glow">
+              <Button type="button" onClick={() => setActiveTab("dimensionador")} className="bg-primary text-primary-foreground hover:bg-highlight-glow">
+                <Settings2 className="mr-2 h-4 w-4" />
+                Ir para os numeros
+              </Button>
+              <Button type="button" variant="outline" onClick={() => setActiveTab("relatorio")} className="border-border bg-muted/25">
                 <FileDown className="mr-2 h-4 w-4" />
-                Gerar PDF i9TMG
-              </Button>
-              <Button type="button" variant="outline" onClick={copyReport} className="border-border bg-muted/25">
-                <ClipboardCopy className="mr-2 h-4 w-4" />
-                Copiar relatorio
-              </Button>
-              <Button type="button" variant="outline" onClick={exportReport} className="border-border bg-muted/25">
-                <Download className="mr-2 h-4 w-4" />
-                TXT tecnico
-              </Button>
-              <Button type="button" variant="outline" onClick={exportCsv} className="border-border bg-muted/25">
-                <FileSpreadsheet className="mr-2 h-4 w-4" />
-                Baixar CSV
-              </Button>
-              <Button type="button" variant="outline" onClick={() => window.print()} className="border-border bg-muted/25">
-                <Printer className="mr-2 h-4 w-4" />
-                Imprimir
+                Ver relatorio
               </Button>
             </div>
           </div>
@@ -332,22 +351,22 @@ export default function Mistura90Excel() {
         </CardContent>
       </Card>
 
-      <Tabs defaultValue="painel" className="space-y-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="grid h-auto w-full grid-cols-1 gap-2 bg-muted/20 p-1 sm:grid-cols-2 lg:grid-cols-5 print:hidden">
+          <TabsTrigger value="dimensionador" className="min-h-10 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            1. Dimensionador
+          </TabsTrigger>
+          <TabsTrigger value="relatorio" className="min-h-10 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            2. Relatorio final
+          </TabsTrigger>
           <TabsTrigger value="painel" className="min-h-10 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
             Painel executivo
-          </TabsTrigger>
-          <TabsTrigger value="dimensionador" className="min-h-10 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-            Dimensionador
           </TabsTrigger>
           <TabsTrigger value="padrao-i9" className="min-h-10 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
             Padrao i9TMG
           </TabsTrigger>
           <TabsTrigger value="memoria" className="min-h-10 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
             Memoria de calculo
-          </TabsTrigger>
-          <TabsTrigger value="relatorio" className="min-h-10 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-            Relatorio final
           </TabsTrigger>
         </TabsList>
 
@@ -484,7 +503,7 @@ export default function Mistura90Excel() {
               <CardHeader className="flex flex-col gap-3 border-b border-border/70 p-5 md:flex-row md:items-center md:justify-between">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Inputs do Excel</p>
-                  <CardTitle className="mt-1 text-xl text-foreground">Dimensionador parametrico i9TMG</CardTitle>
+                  <CardTitle className="mt-1 text-xl text-foreground">Preenchimento do relatorio tecnico</CardTitle>
                 </div>
                 <Button type="button" variant="outline" onClick={resetScenario} className="w-fit border-border bg-muted/25">
                   <RefreshCw className="mr-2 h-4 w-4" />
@@ -492,6 +511,32 @@ export default function Mistura90Excel() {
                 </Button>
               </CardHeader>
               <CardContent className="space-y-5 p-5">
+                <div className="rounded-lg border border-primary/30 bg-primary/10 p-4">
+                  <div className="grid gap-4 lg:grid-cols-[1fr_0.8fr]">
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Equipamento base</p>
+                      <h2 className="mt-1 text-lg font-semibold text-foreground">{selectedEquipment.code} - {selectedEquipment.name}</h2>
+                      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                        O PDF final usa este equipamento, os valores informados abaixo e a lista tecnica filtrada do RESUMO.
+                      </p>
+                    </div>
+                    <Select value={selectedEquipmentId} onValueChange={setSelectedEquipmentId}>
+                      <SelectTrigger className="h-11 border-primary/30 bg-background/70">
+                        <SelectValue placeholder="Selecionar equipamento" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {mistura90Equipments.map((equipment) => (
+                          <SelectItem key={equipment.id} value={equipment.id}>
+                            {equipment.code} - {equipment.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Tipo de calculo</p>
                 <div className="grid gap-3 sm:grid-cols-2">
                   {(Object.keys(mistura90ScenarioLabels) as Mistura90ScenarioMode[]).map((mode) => (
                     <button
@@ -514,7 +559,10 @@ export default function Mistura90Excel() {
                     </button>
                   ))}
                 </div>
+                </div>
 
+                <div>
+                  <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Numeros de entrada</p>
                 <div className="grid gap-3 md:grid-cols-2">
                   {scenarioInputs.map((input) => (
                     <label key={input.key} className="rounded-lg border border-border/70 bg-background/35 p-3">
@@ -531,6 +579,7 @@ export default function Mistura90Excel() {
                       />
                     </label>
                   ))}
+                </div>
                 </div>
               </CardContent>
             </Card>
@@ -568,6 +617,15 @@ export default function Mistura90Excel() {
                       Parametros consistentes para emissao preliminar do relatorio.
                     </div>
                   )}
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <Button type="button" onClick={exportPdf} className="bg-primary text-primary-foreground hover:bg-highlight-glow">
+                      <FileDown className="mr-2 h-4 w-4" />
+                      Gerar PDF com estes numeros
+                    </Button>
+                    <Button type="button" variant="outline" onClick={() => setActiveTab("relatorio")} className="border-border bg-muted/25">
+                      Conferir relatorio na tela
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
 
@@ -747,17 +805,29 @@ export default function Mistura90Excel() {
         </TabsContent>
 
         <TabsContent value="relatorio" className="space-y-4">
-          <ReportCover kpis={kpis} />
+          <ReportCover kpis={kpis} selectedEquipment={selectedEquipment} scenario={scenarioResult} />
+          <ExportActionPanel
+            onPdf={exportPdf}
+            onCopy={copyReport}
+            onTxt={exportReport}
+            onCsv={exportCsv}
+            onPrint={() => window.print()}
+          />
           <Card className="gradient-industrial glow-card border-border/60">
             <CardHeader className="flex flex-col gap-3 border-b border-border/70 p-5 md:flex-row md:items-center md:justify-between">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Saida tecnica</p>
-                <CardTitle className="mt-1 text-xl text-foreground">Lista de materiais e selecoes</CardTitle>
+                <CardTitle className="mt-1 text-xl text-foreground">
+                  {showFullReport ? "Apendice completo de materiais" : `Lista do equipamento ${selectedEquipment.code}`}
+                </CardTitle>
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <Badge variant="outline" className="w-fit border-primary/25 bg-primary/10 text-primary">
-                  {filteredReportItems.length} linhas filtradas
+                  {reportTableItems.length} linhas em exibicao
                 </Badge>
+                <Button type="button" variant="outline" onClick={() => setShowFullReport((current) => !current)} className="h-9 border-border bg-muted/25">
+                  {showFullReport ? "Ver equipamento ativo" : "Ver apendice completo"}
+                </Button>
                 <Button type="button" onClick={exportPdf} className="h-9 bg-primary text-primary-foreground hover:bg-highlight-glow">
                   <FileDown className="mr-2 h-4 w-4" />
                   PDF
@@ -779,7 +849,7 @@ export default function Mistura90Excel() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredReportItems.map((item) => {
+                    {reportTableItems.map((item) => {
                       const equipment = getEquipmentById(item.equipmentId);
                       const criticality = getMistura90Criticality(item);
                       return (
@@ -937,13 +1007,98 @@ function MetricPill({ metric, compact = false }: { metric: { label: string; valu
 function MiniStat({ label, value }: { label: string; value: string | number }) {
   return (
     <div className="rounded-md border border-border/60 bg-muted/20 px-2 py-2">
-      <p className="font-mono text-sm font-semibold text-foreground">{value}</p>
+      <p className="break-words font-mono text-sm font-semibold text-foreground">{value}</p>
       <p className="mt-1 text-[11px] text-muted-foreground">{label}</p>
     </div>
   );
 }
 
-function ReportCover({ kpis }: { kpis: ReturnType<typeof getMistura90Kpis> }) {
+function WorkflowStepCard({
+  index,
+  title,
+  text,
+  active,
+  onClick,
+}: {
+  index: string;
+  title: string;
+  text: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`group rounded-lg border p-3 text-left transition-all duration-200 hover:-translate-y-0.5 ${
+        active ? "border-primary/45 bg-primary/15" : "border-border/70 bg-background/30 hover:border-primary/35 hover:bg-muted/20"
+      }`}
+    >
+      <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/15 font-mono text-xs font-semibold text-primary">
+        {index}
+      </span>
+      <p className="mt-3 text-sm font-semibold text-foreground">{title}</p>
+      <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{text}</p>
+    </button>
+  );
+}
+
+function ExportActionPanel({
+  onPdf,
+  onCopy,
+  onTxt,
+  onCsv,
+  onPrint,
+}: {
+  onPdf: () => void;
+  onCopy: () => void;
+  onTxt: () => void;
+  onCsv: () => void;
+  onPrint: () => void;
+}) {
+  return (
+    <Card className="gradient-industrial glow-card border-border/60 print:hidden">
+      <CardContent className="flex flex-col gap-3 p-4 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <p className="text-sm font-semibold text-foreground">Saidas do relatorio</p>
+          <p className="mt-1 text-sm text-muted-foreground">Use o PDF como entrega principal; TXT, CSV e impressao ficam como apoio tecnico.</p>
+        </div>
+        <div className="grid gap-2 sm:grid-cols-2 lg:flex lg:flex-wrap lg:justify-end">
+          <Button type="button" onClick={onPdf} className="bg-primary text-primary-foreground hover:bg-highlight-glow">
+            <FileDown className="mr-2 h-4 w-4" />
+            Gerar PDF
+          </Button>
+          <Button type="button" variant="outline" onClick={onCopy} className="border-border bg-muted/25">
+            <ClipboardCopy className="mr-2 h-4 w-4" />
+            Copiar
+          </Button>
+          <Button type="button" variant="outline" onClick={onTxt} className="border-border bg-muted/25">
+            <Download className="mr-2 h-4 w-4" />
+            TXT
+          </Button>
+          <Button type="button" variant="outline" onClick={onCsv} className="border-border bg-muted/25">
+            <FileSpreadsheet className="mr-2 h-4 w-4" />
+            CSV
+          </Button>
+          <Button type="button" variant="outline" onClick={onPrint} className="border-border bg-muted/25">
+            <Printer className="mr-2 h-4 w-4" />
+            Imprimir
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function ReportCover({
+  kpis,
+  selectedEquipment,
+  scenario,
+}: {
+  kpis: ReturnType<typeof getMistura90Kpis>;
+  selectedEquipment: Mistura90Equipment;
+  scenario: Mistura90ScenarioResult;
+}) {
   return (
     <Card className="gradient-industrial glow-card border-primary/20">
       <CardContent className="grid gap-5 p-5 lg:grid-cols-[1fr_0.82fr]">
@@ -954,10 +1109,11 @@ function ReportCover({ kpis }: { kpis: ReturnType<typeof getMistura90Kpis> }) {
             Documento consolidado a partir da aba RESUMO e das memorias de calculo do Excel. A estrutura destaca
             equipamentos, listas de compra/fabricacao, componentes criticos, pendencias de desenho e indicadores de liberacao.
           </p>
-          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <MiniStat label="Equipamento ativo" value={selectedEquipment.code} />
+            <MiniStat label="Cenario" value={scenario.title.replace("Dimensionamento rapido de ", "")} />
             <MiniStat label="Equipamentos" value={kpis.equipments} />
             <MiniStat label="Itens" value={kpis.reportItems} />
-            <MiniStat label="Qtd. acumulada" value={formatNumber(kpis.totalQuantity)} />
           </div>
         </div>
         <div className="rounded-lg border border-border/70 bg-background/35 p-4">

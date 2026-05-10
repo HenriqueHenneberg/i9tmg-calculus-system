@@ -6,6 +6,7 @@ import {
   getEquipmentById,
   getMistura90Criticality,
   getMistura90Kpis,
+  getReportItemsByEquipment,
   mistura90Equipments,
   mistura90ReportItems,
   mistura90Workbook,
@@ -27,6 +28,8 @@ export async function generateMistura90PdfReport({ selectedEquipment, scenario }
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const kpis = getMistura90Kpis();
   const logo = await loadLogo();
+  const selectedItems = getReportItemsByEquipment(selectedEquipment.id);
+  const pending = mistura90ReportItems.filter((item) => getMistura90Criticality(item) === "Pendente");
 
   drawHeader(doc, logo);
   doc.setTextColor(...i9Blue);
@@ -55,9 +58,65 @@ export async function generateMistura90PdfReport({ selectedEquipment, scenario }
   doc.setFont("helvetica", "bold");
   doc.setFontSize(13);
   doc.setTextColor(...i9Blue);
-  doc.text("1. Resultado do calculo parametrico", 14, 104);
+  doc.text("1. Escopo do equipamento selecionado", 14, 104);
   autoTable(doc, {
     startY: 109,
+    head: [["Codigo", "Tipo", "Status", "Descricao tecnica"]],
+    body: [[selectedEquipment.code, selectedEquipment.type, selectedEquipment.status, selectedEquipment.description]],
+    theme: "grid",
+    styles: { font: "helvetica", fontSize: 8, cellPadding: 2.2, valign: "top" },
+    headStyles: { fillColor: i9Blue, textColor: 255 },
+    columnStyles: {
+      0: { cellWidth: 28, fontStyle: "bold", textColor: i9Blue },
+      1: { cellWidth: 28 },
+      2: { cellWidth: 24 },
+      3: { cellWidth: 98 },
+    },
+    margin: { left: 14, right: 14 },
+  });
+
+  autoTable(doc, {
+    startY: getAutoTableY(doc) + 5,
+    head: [["Indicador do equipamento", "Valor", "Unidade"]],
+    body: selectedEquipment.metrics.map((metric) => [metric.label, String(metric.value), metric.unit || "-"]),
+    theme: "grid",
+    styles: { font: "helvetica", fontSize: 8, cellPadding: 2 },
+    headStyles: { fillColor: [38, 61, 76], textColor: 255 },
+    alternateRowStyles: { fillColor: [248, 250, 252] },
+    columnStyles: { 0: { cellWidth: 82 }, 1: { cellWidth: 46, halign: "right", fontStyle: "bold" }, 2: { cellWidth: 50 } },
+    margin: { left: 14, right: 14 },
+  });
+
+  doc.addPage();
+  drawHeader(doc, logo);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(13);
+  doc.setTextColor(...i9Blue);
+  doc.text("2. Numeros preenchidos no dimensionador", 14, 28);
+  autoTable(doc, {
+    startY: 33,
+    head: [["Variavel", "Descricao", "Valor", "Unidade"]],
+    body: scenario.inputs.map((input) => [input.key, input.label, formatScenarioValue(input.value), input.unit || "coef."]),
+    theme: "grid",
+    styles: { font: "helvetica", fontSize: 8, cellPadding: 2 },
+    headStyles: { fillColor: i9Blue, textColor: 255 },
+    alternateRowStyles: { fillColor: [248, 250, 252] },
+    columnStyles: {
+      0: { cellWidth: 22, fontStyle: "bold", textColor: i9Blue },
+      1: { cellWidth: 82 },
+      2: { cellWidth: 38, halign: "right", fontStyle: "bold" },
+      3: { cellWidth: 36 },
+    },
+    margin: { left: 14, right: 14 },
+  });
+
+  const outputY = getAutoTableY(doc) + 8;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(13);
+  doc.setTextColor(...i9Blue);
+  doc.text("3. Resultado do calculo parametrico", 14, outputY);
+  autoTable(doc, {
+    startY: outputY + 5,
     head: [["Indicador", "Valor", "Unidade", "Status"]],
     body: scenario.outputs.map((output) => [
       output.label,
@@ -76,7 +135,7 @@ export async function generateMistura90PdfReport({ selectedEquipment, scenario }
   doc.setFont("helvetica", "bold");
   doc.setFontSize(13);
   doc.setTextColor(...i9Blue);
-  doc.text("2. Passo a passo", 14, afterOutputs);
+  doc.text("4. Memoria passo a passo", 14, afterOutputs);
   autoTable(doc, {
     startY: afterOutputs + 5,
     body: scenario.steps.map((step, index) => [`${index + 1}`, step]),
@@ -86,19 +145,19 @@ export async function generateMistura90PdfReport({ selectedEquipment, scenario }
     margin: { left: 14, right: 14 },
   });
 
-  addPageIfNeeded(doc, 62);
+  doc.addPage();
   drawHeader(doc, logo);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(13);
   doc.setTextColor(...i9Blue);
-  doc.text("3. Grafico executivo por categoria", 14, 28);
+  doc.text("5. Grafico executivo por categoria", 14, 28);
   drawCategoryChart(doc, 14, 35);
 
   const chartBottom = 96;
   doc.setFont("helvetica", "bold");
   doc.setFontSize(13);
   doc.setTextColor(...i9Blue);
-  doc.text("4. Padrao i9TMG aplicado", 14, chartBottom);
+  doc.text("6. Padrao i9TMG aplicado", 14, chartBottom);
   autoTable(doc, {
     startY: chartBottom + 5,
     head: [["Frente", "Entrega esperada no software"]],
@@ -110,20 +169,19 @@ export async function generateMistura90PdfReport({ selectedEquipment, scenario }
     margin: { left: 14, right: 14 },
   });
 
-  addPageIfNeeded(doc, 90);
+  doc.addPage();
   drawHeader(doc, logo);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(13);
   doc.setTextColor(...i9Blue);
-  doc.text("5. Lista de materiais e selecoes", 14, 28);
+  doc.text("7. Lista do equipamento selecionado", 14, 28);
   autoTable(doc, {
     startY: 33,
     head: [["Equip.", "Item", "Qtd.", "Categoria", "Crit.", "Descricao / observacao"]],
-    body: mistura90ReportItems.map((item) => {
-      const equipment = getEquipmentById(item.equipmentId);
+    body: selectedItems.map((item) => {
       const note = item.note ? ` OBS: ${item.note}` : "";
       return [
-        equipment?.code || "",
+        selectedEquipment.code,
         item.item,
         item.quantity ?? "A definir",
         classifyMistura90Item(item),
@@ -143,17 +201,16 @@ export async function generateMistura90PdfReport({ selectedEquipment, scenario }
       4: { cellWidth: 18 },
       5: { cellWidth: 70 },
     },
-    margin: { left: 10, right: 10 },
+    margin: { top: 24, left: 10, right: 10 },
   });
 
-  addPageIfNeeded(doc, 84);
+  doc.addPage();
   drawHeader(doc, logo);
   const start = 28;
   doc.setFont("helvetica", "bold");
   doc.setFontSize(13);
   doc.setTextColor(...i9Blue);
-  doc.text("6. Pendencias e liberacao", 14, start);
-  const pending = mistura90ReportItems.filter((item) => getMistura90Criticality(item) === "Pendente");
+  doc.text("8. Pendencias e liberacao", 14, start);
   autoTable(doc, {
     startY: start + 5,
     head: [["Equip.", "Item", "Acao requerida"]],
@@ -169,7 +226,7 @@ export async function generateMistura90PdfReport({ selectedEquipment, scenario }
   doc.setFont("helvetica", "bold");
   doc.setFontSize(13);
   doc.setTextColor(...i9Blue);
-  doc.text("7. Requisitos de qualidade", 14, qualityY);
+  doc.text("9. Requisitos de qualidade", 14, qualityY);
   autoTable(doc, {
     startY: qualityY + 5,
     body: i9QualityRequirements.map((requirement) => [requirement.name, requirement.application]),
@@ -179,16 +236,55 @@ export async function generateMistura90PdfReport({ selectedEquipment, scenario }
     margin: { left: 14, right: 14 },
   });
 
+  doc.addPage("a4", "landscape");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(13);
+  doc.setTextColor(...i9Blue);
+  doc.text("10. Apendice completo do RESUMO", 10, 28);
+  autoTable(doc, {
+    startY: 34,
+    head: [["Equip.", "Tipo", "Item", "Qtd.", "Categoria", "Crit.", "Descricao / observacao"]],
+    body: mistura90ReportItems.map((item) => {
+      const equipment = getEquipmentById(item.equipmentId);
+      const note = item.note ? ` OBS: ${item.note}` : "";
+      return [
+        equipment?.code || "",
+        equipment?.type || "",
+        item.item,
+        item.quantity ?? "A definir",
+        classifyMistura90Item(item),
+        getMistura90Criticality(item),
+        `${item.description || "Descricao pendente."}${note}`,
+      ];
+    }),
+    theme: "grid",
+    styles: { fontSize: 6.2, cellPadding: 1.2, valign: "top" },
+    headStyles: { fillColor: i9Blue, textColor: 255 },
+    alternateRowStyles: { fillColor: [248, 250, 252] },
+    columnStyles: {
+      0: { cellWidth: 20, fontStyle: "bold", textColor: i9Blue },
+      1: { cellWidth: 22 },
+      2: { cellWidth: 28 },
+      3: { cellWidth: 17, halign: "right" },
+      4: { cellWidth: 36 },
+      5: { cellWidth: 20 },
+      6: { cellWidth: 142 },
+    },
+    margin: { top: 24, left: 6, right: 6 },
+    willDrawPage: () => drawHeader(doc, logo),
+  });
+
   drawFooterAllPages(doc);
   doc.save(`relatorio-i9tmg-mistura-90-${selectedEquipment.code.replace(/\s+/g, "-").toLowerCase()}.pdf`);
 }
 
 function drawHeader(doc: jsPDF, logo?: string) {
+  const width = doc.internal.pageSize.getWidth();
   doc.setFillColor(245, 247, 249);
-  doc.rect(0, 0, 210, 18, "F");
+  doc.rect(0, 0, width, 18, "F");
   doc.setDrawColor(...i9Orange);
   doc.setLineWidth(0.8);
-  doc.line(0, 18, 210, 18);
+  doc.line(0, 18, width, 18);
   if (logo) doc.addImage(logo, "PNG", 14, 4, 12, 12);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
@@ -196,7 +292,7 @@ function drawHeader(doc: jsPDF, logo?: string) {
   doc.text("i9TMG Calculus System", logo ? 30 : 14, 11);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(...slate);
-  doc.text("Mentes e maquinas em beneficio da sua industria", 128, 11);
+  doc.text("Mentes e maquinas em beneficio da sua industria", width - 14, 11, { align: "right" });
 }
 
 function drawInfoGrid(doc: jsPDF, items: Array<[string, string]>, x: number, y: number) {
@@ -273,19 +369,17 @@ function getAutoTableY(doc: jsPDF) {
   return withTable.lastAutoTable?.finalY || 20;
 }
 
-function addPageIfNeeded(doc: jsPDF, requiredHeight: number) {
-  if (getAutoTableY(doc) + requiredHeight > 278) doc.addPage();
-}
-
 function drawFooterAllPages(doc: jsPDF) {
   const pages = doc.getNumberOfPages();
   for (let page = 1; page <= pages; page += 1) {
     doc.setPage(page);
+    const width = doc.internal.pageSize.getWidth();
+    const height = doc.internal.pageSize.getHeight();
     doc.setFont("helvetica", "normal");
     doc.setFontSize(7);
     doc.setTextColor(120, 130, 140);
-    doc.text("Documento gerado pelo i9TMG Calculus System - prototipo academico frontend.", 14, 291);
-    doc.text(`Pagina ${page}/${pages}`, 184, 291);
+    doc.text("Documento gerado pelo i9TMG Calculus System - prototipo academico frontend.", 14, height - 6);
+    doc.text(`Pagina ${page}/${pages}`, width - 14, height - 6, { align: "right" });
   }
 }
 
