@@ -13,6 +13,7 @@ import {
   type Mistura90Equipment,
 } from "@/lib/mistura90-excel-data";
 import { formatScenarioValue, type Mistura90ScenarioResult } from "@/lib/mistura90-calculations";
+import { getMistura90ReportAnalytics } from "@/lib/mistura90-report";
 
 interface PdfReportOptions {
   selectedEquipment: Mistura90Equipment;
@@ -29,17 +30,17 @@ export async function generateMistura90PdfReport({ selectedEquipment, scenario }
   const kpis = getMistura90Kpis();
   const logo = await loadLogo();
   const selectedItems = getReportItemsByEquipment(selectedEquipment.id);
-  const pending = mistura90ReportItems.filter((item) => getMistura90Criticality(item) === "Pendente");
+  const analytics = getMistura90ReportAnalytics(selectedEquipment.id);
 
-  drawHeader(doc, logo);
+  drawHeader(doc, logo, "Dossie tecnico de liberacao");
   doc.setTextColor(...i9Blue);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(22);
-  doc.text("Relatorio Tecnico i9TMG", 14, 34);
+  doc.setFontSize(20);
+  doc.text("Dossie Tecnico i9TMG", 14, 33);
   doc.setTextColor(...slate);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
-  doc.text("Projeto Mistura 90 | Engenharia, memoria de calculo, suprimentos e liberacao tecnica", 14, 41);
+  doc.text("Projeto Mistura 90 | Compra, fabricacao, montagem, qualidade e rastreabilidade", 14, 40);
 
   drawInfoGrid(doc, [
     ["Fonte", mistura90Workbook.fileName],
@@ -52,15 +53,33 @@ export async function generateMistura90PdfReport({ selectedEquipment, scenario }
     ["Equipamentos", String(kpis.equipments)],
     ["Itens", String(kpis.reportItems)],
     ["Qtd. total", formatScenarioValue(kpis.totalQuantity)],
-    ["Pendencias", String(kpis.pendingItems)],
+    ["Score", `${analytics.releaseScore}%`],
   ], 14, 77);
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(13);
   doc.setTextColor(...i9Blue);
-  doc.text("1. Escopo do equipamento selecionado", 14, 104);
+  doc.text("1. Resumo executivo de liberacao", 14, 104);
+  drawStatusPanel(doc, analytics.statusLabel, analytics.pendingItems, analytics.highCriticalityItems, 14, 110);
+
   autoTable(doc, {
-    startY: 109,
+    startY: 137,
+    head: [["Pacote", "Entrega esperada"]],
+    body: analytics.deliverables,
+    theme: "grid",
+    styles: { font: "helvetica", fontSize: 8, cellPadding: 2.2, valign: "top" },
+    headStyles: { fillColor: i9Blue, textColor: 255 },
+    columnStyles: { 0: { cellWidth: 32, fontStyle: "bold", textColor: i9Blue }, 1: { cellWidth: 146 } },
+    margin: { left: 14, right: 14 },
+  });
+
+  const scopeY = getAutoTableY(doc) + 9;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(13);
+  doc.setTextColor(...i9Blue);
+  doc.text("2. Escopo do equipamento selecionado", 14, scopeY);
+  autoTable(doc, {
+    startY: scopeY + 5,
     head: [["Codigo", "Tipo", "Status", "Descricao tecnica"]],
     body: [[selectedEquipment.code, selectedEquipment.type, selectedEquipment.status, selectedEquipment.description]],
     theme: "grid",
@@ -88,11 +107,11 @@ export async function generateMistura90PdfReport({ selectedEquipment, scenario }
   });
 
   doc.addPage();
-  drawHeader(doc, logo);
+  drawHeader(doc, logo, "Memoria parametrica");
   doc.setFont("helvetica", "bold");
   doc.setFontSize(13);
   doc.setTextColor(...i9Blue);
-  doc.text("2. Numeros preenchidos no dimensionador", 14, 28);
+  doc.text("3. Numeros preenchidos no dimensionador", 14, 28);
   autoTable(doc, {
     startY: 33,
     head: [["Variavel", "Descricao", "Valor", "Unidade"]],
@@ -114,7 +133,7 @@ export async function generateMistura90PdfReport({ selectedEquipment, scenario }
   doc.setFont("helvetica", "bold");
   doc.setFontSize(13);
   doc.setTextColor(...i9Blue);
-  doc.text("3. Resultado do calculo parametrico", 14, outputY);
+  doc.text("4. Resultado do calculo parametrico", 14, outputY);
   autoTable(doc, {
     startY: outputY + 5,
     head: [["Indicador", "Valor", "Unidade", "Status"]],
@@ -135,7 +154,7 @@ export async function generateMistura90PdfReport({ selectedEquipment, scenario }
   doc.setFont("helvetica", "bold");
   doc.setFontSize(13);
   doc.setTextColor(...i9Blue);
-  doc.text("4. Memoria passo a passo", 14, afterOutputs);
+  doc.text("5. Memoria passo a passo", 14, afterOutputs);
   autoTable(doc, {
     startY: afterOutputs + 5,
     body: scenario.steps.map((step, index) => [`${index + 1}`, step]),
@@ -146,20 +165,51 @@ export async function generateMistura90PdfReport({ selectedEquipment, scenario }
   });
 
   doc.addPage();
-  drawHeader(doc, logo);
+  drawHeader(doc, logo, "Matriz executiva");
   doc.setFont("helvetica", "bold");
   doc.setFontSize(13);
   doc.setTextColor(...i9Blue);
-  doc.text("5. Grafico executivo por categoria", 14, 28);
+  doc.text("6. Grafico executivo por categoria", 14, 28);
   drawCategoryChart(doc, 14, 35);
 
-  const chartBottom = 96;
+  const chartBottom = 98;
   doc.setFont("helvetica", "bold");
   doc.setFontSize(13);
   doc.setTextColor(...i9Blue);
-  doc.text("6. Padrao i9TMG aplicado", 14, chartBottom);
+  doc.text("7. Matriz de liberacao por equipamento", 14, chartBottom);
   autoTable(doc, {
     startY: chartBottom + 5,
+    head: [["Equipamento", "Tipo", "Score", "Pend.", "Criticos", "Status"]],
+    body: analytics.equipmentReleases.map((release) => [
+      release.equipment.code,
+      release.equipment.type,
+      `${release.score}%`,
+      String(release.pendingCount),
+      String(release.highCriticalityCount),
+      release.statusLabel,
+    ]),
+    theme: "grid",
+    styles: { fontSize: 7.5, cellPadding: 1.8 },
+    headStyles: { fillColor: i9Blue, textColor: 255 },
+    alternateRowStyles: { fillColor: [248, 250, 252] },
+    columnStyles: {
+      0: { cellWidth: 32, fontStyle: "bold", textColor: i9Blue },
+      1: { cellWidth: 28 },
+      2: { cellWidth: 18, halign: "right" },
+      3: { cellWidth: 16, halign: "right" },
+      4: { cellWidth: 18, halign: "right" },
+      5: { cellWidth: 66 },
+    },
+    margin: { left: 14, right: 14 },
+  });
+
+  const i9Y = getAutoTableY(doc) + 8;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(13);
+  doc.setTextColor(...i9Blue);
+  doc.text("8. Padrao i9TMG aplicado", 14, i9Y);
+  autoTable(doc, {
+    startY: i9Y + 5,
     head: [["Frente", "Entrega esperada no software"]],
     body: i9SolutionFronts.map((front) => [front.name, `${front.description} Entregas: ${front.deliverables.join(", ")}.`]),
     theme: "grid",
@@ -170,13 +220,34 @@ export async function generateMistura90PdfReport({ selectedEquipment, scenario }
   });
 
   doc.addPage();
-  drawHeader(doc, logo);
+  drawHeader(doc, logo, "Lista tecnica por equipamento");
   doc.setFont("helvetica", "bold");
   doc.setFontSize(13);
   doc.setTextColor(...i9Blue);
-  doc.text("7. Lista do equipamento selecionado", 14, 28);
+  doc.text("9. Pacote do equipamento selecionado", 14, 28);
   autoTable(doc, {
     startY: 33,
+    head: [["Categoria", "Itens", "Qtd. total", "Pendencias"]],
+    body: analytics.selectedCategorySummaries.map((summary) => [
+      summary.category,
+      String(summary.itemCount),
+      formatScenarioValue(summary.quantity),
+      String(summary.pending),
+    ]),
+    theme: "grid",
+    styles: { fontSize: 8, cellPadding: 2 },
+    headStyles: { fillColor: [38, 61, 76], textColor: 255 },
+    columnStyles: {
+      0: { cellWidth: 72, fontStyle: "bold", textColor: i9Blue },
+      1: { cellWidth: 26, halign: "right" },
+      2: { cellWidth: 42, halign: "right" },
+      3: { cellWidth: 38, halign: "right" },
+    },
+    margin: { left: 14, right: 14 },
+  });
+
+  autoTable(doc, {
+    startY: getAutoTableY(doc) + 7,
     head: [["Equip.", "Item", "Qtd.", "Categoria", "Crit.", "Descricao / observacao"]],
     body: selectedItems.map((item) => {
       const note = item.note ? ` OBS: ${item.note}` : "";
@@ -205,20 +276,20 @@ export async function generateMistura90PdfReport({ selectedEquipment, scenario }
   });
 
   doc.addPage();
-  drawHeader(doc, logo);
+  drawHeader(doc, logo, "Pendencias e qualidade");
   const start = 28;
   doc.setFont("helvetica", "bold");
   doc.setFontSize(13);
   doc.setTextColor(...i9Blue);
-  doc.text("8. Pendencias e liberacao", 14, start);
+  doc.text("10. Pendencias e plano de acao", 14, start);
   autoTable(doc, {
     startY: start + 5,
-    head: [["Equip.", "Item", "Acao requerida"]],
-    body: pending.map((item) => [getEquipmentById(item.equipmentId)?.code || "", item.item, item.note || "Validar quantidade, descricao ou desenho final."]),
+    head: [["Equip.", "Item", "Responsavel", "Acao requerida"]],
+    body: analytics.actionItems.map((item) => [item.equipmentCode, item.item, item.owner, item.action]),
     theme: "grid",
-    styles: { fontSize: 8, cellPadding: 2 },
+    styles: { fontSize: 7.5, cellPadding: 2, valign: "top" },
     headStyles: { fillColor: i9Orange, textColor: 255 },
-    columnStyles: { 0: { cellWidth: 28, fontStyle: "bold" }, 1: { cellWidth: 42 }, 2: { cellWidth: 108 } },
+    columnStyles: { 0: { cellWidth: 24, fontStyle: "bold" }, 1: { cellWidth: 34 }, 2: { cellWidth: 42 }, 3: { cellWidth: 78 } },
     margin: { left: 14, right: 14 },
   });
 
@@ -226,7 +297,7 @@ export async function generateMistura90PdfReport({ selectedEquipment, scenario }
   doc.setFont("helvetica", "bold");
   doc.setFontSize(13);
   doc.setTextColor(...i9Blue);
-  doc.text("9. Requisitos de qualidade", 14, qualityY);
+  doc.text("11. Requisitos de qualidade", 14, qualityY);
   autoTable(doc, {
     startY: qualityY + 5,
     body: i9QualityRequirements.map((requirement) => [requirement.name, requirement.application]),
@@ -240,7 +311,7 @@ export async function generateMistura90PdfReport({ selectedEquipment, scenario }
   doc.setFont("helvetica", "bold");
   doc.setFontSize(13);
   doc.setTextColor(...i9Blue);
-  doc.text("10. Apendice completo do RESUMO", 10, 28);
+  doc.text("12. Apendice completo do RESUMO", 10, 28);
   autoTable(doc, {
     startY: 34,
     head: [["Equip.", "Tipo", "Item", "Qtd.", "Categoria", "Crit.", "Descricao / observacao"]],
@@ -271,14 +342,29 @@ export async function generateMistura90PdfReport({ selectedEquipment, scenario }
       6: { cellWidth: 142 },
     },
     margin: { top: 24, left: 6, right: 6 },
-    willDrawPage: () => drawHeader(doc, logo),
+    willDrawPage: () => drawHeader(doc, logo, "Apendice completo"),
   });
 
   drawFooterAllPages(doc);
   doc.save(`relatorio-i9tmg-mistura-90-${selectedEquipment.code.replace(/\s+/g, "-").toLowerCase()}.pdf`);
 }
 
-function drawHeader(doc: jsPDF, logo?: string) {
+function drawStatusPanel(doc: jsPDF, status: string, pendingItems: number, criticalItems: number, x: number, y: number) {
+  doc.setFillColor(250, 252, 254);
+  doc.roundedRect(x, y, 178, 20, 2, 2, "F");
+  doc.setDrawColor(226, 232, 240);
+  doc.roundedRect(x, y, 178, 20, 2, 2, "S");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
+  doc.setTextColor(...i9Blue);
+  doc.text("Leitura executiva", x + 4, y + 6);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(...slate);
+  doc.text(doc.splitTextToSize(`Status: ${status}. Existem ${pendingItems} pendencias tecnicas e ${criticalItems} itens de criticidade alta no pacote completo.`, 168), x + 4, y + 11);
+}
+
+function drawHeader(doc: jsPDF, logo?: string, section = "Relatorio tecnico") {
   const width = doc.internal.pageSize.getWidth();
   doc.setFillColor(245, 247, 249);
   doc.rect(0, 0, width, 18, "F");
@@ -292,7 +378,9 @@ function drawHeader(doc: jsPDF, logo?: string) {
   doc.text("i9TMG Calculus System", logo ? 30 : 14, 11);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(...slate);
-  doc.text("Mentes e maquinas em beneficio da sua industria", width - 14, 11, { align: "right" });
+  doc.text(section, width - 14, 8, { align: "right" });
+  doc.setFontSize(7);
+  doc.text("Mentes e maquinas em beneficio da sua industria", width - 14, 13, { align: "right" });
 }
 
 function drawInfoGrid(doc: jsPDF, items: Array<[string, string]>, x: number, y: number) {

@@ -46,11 +46,11 @@ export interface Mistura90WorkbookSheet {
 
 export const mistura90Workbook = {
   fileName: "Calculos Equipamentos Mistura 90 (2).xlsx",
-  sourceLabel: "Planilha tecnica protegida por senha, analisada em 08/05/2026",
+  sourceLabel: "Planilha tecnica protegida por senha, analisada em 15/05/2026",
   sheets: 11,
   equipmentCount: 13,
-  summaryRows: 135,
-  formulaCells: 2190,
+  summaryRows: 137,
+  formulaCells: 2046,
 };
 
 export const mistura90Sheets: Mistura90WorkbookSheet[] = [
@@ -59,9 +59,9 @@ export const mistura90Sheets: Mistura90WorkbookSheet[] = [
   { name: "110-MO-001", rows: 122, columns: 15, formulas: 48, purpose: "Moinho tipo facas" },
   { name: "110-EL-002", rows: 483, columns: 33, formulas: 329, purpose: "Elevador EL 02 Mistura 90" },
   { name: "110-PN-002", rows: 460, columns: 21, formulas: 40, purpose: "Peneira rotativa malha 10" },
-  { name: "110-TP-001", rows: 220, columns: 26, formulas: 135, purpose: "Transportador de correia" },
-  { name: "110-TP-002", rows: 220, columns: 26, formulas: 135, purpose: "Transportador de correia" },
-  { name: "110-TP-003", rows: 220, columns: 26, formulas: 135, purpose: "Transportador de correia" },
+  { name: "110-TP-001", rows: 725, columns: 26, formulas: 201, purpose: "Transportador de correia" },
+  { name: "110-TP-002", rows: 725, columns: 26, formulas: 201, purpose: "Transportador de correia" },
+  { name: "110-TP-003", rows: 725, columns: 26, formulas: 201, purpose: "Transportador de correia" },
   { name: "110-TP-004", rows: 908, columns: 26, formulas: 350, purpose: "Transportador do Big-Bag" },
   { name: "110 - EL- 003", rows: 484, columns: 32, formulas: 308, purpose: "Elevador EL 01 Descarga" },
   { name: "RESUMO", rows: 137, columns: 5, formulas: 1, purpose: "Relatorio de materiais e selecoes" },

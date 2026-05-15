@@ -80,6 +80,11 @@ import {
   type Mistura90ScenarioResult,
 } from "@/lib/mistura90-calculations";
 import { i9CompanyTimeline, i9QualityRequirements, i9Segments, i9SolutionFronts } from "@/lib/i9-requirements";
+import {
+  getMistura90ReportAnalytics,
+  getReleaseBadgeClass,
+  type Mistura90ReportAnalytics,
+} from "@/lib/mistura90-report";
 
 const chartColors = [
   "hsl(var(--primary))",
@@ -113,6 +118,7 @@ export default function Mistura90Excel() {
   const [scenarioInputs, setScenarioInputs] = useState<Mistura90ScenarioInput[]>(() => cloneScenarioInputs(inferMistura90Scenario(selectedEquipment.type)));
   const scenarioResult = useMemo(() => calculateMistura90Scenario(scenarioMode, scenarioInputs), [scenarioInputs, scenarioMode]);
   const scenarioValidation = useMemo(() => validateMistura90ScenarioInputs(scenarioMode, scenarioInputs), [scenarioInputs, scenarioMode]);
+  const reportAnalytics = useMemo(() => getMistura90ReportAnalytics(selectedEquipment.id), [selectedEquipment.id]);
 
   useEffect(() => {
     const nextMode = inferMistura90Scenario(selectedEquipment.type);
@@ -177,7 +183,10 @@ export default function Mistura90Excel() {
     return Array.from(grouped.entries()).map(([name, value]) => ({ name, value }));
   }, []);
 
-  const reportText = useMemo(() => buildReportText(), []);
+  const reportText = useMemo(
+    () => buildReportText(selectedEquipment, scenarioResult, reportAnalytics),
+    [reportAnalytics, scenarioResult, selectedEquipment],
+  );
 
   const updateScenarioInput = (key: string, value: string) => {
     setScenarioInputs((current) =>
@@ -874,7 +883,11 @@ export default function Mistura90Excel() {
         </TabsContent>
 
         <TabsContent value="relatorio" className="space-y-4">
-          <ReportCover kpis={kpis} selectedEquipment={selectedEquipment} scenario={scenarioResult} />
+          <ReportCover kpis={kpis} selectedEquipment={selectedEquipment} scenario={scenarioResult} analytics={reportAnalytics} />
+          <ReportExecutiveGrid analytics={reportAnalytics} />
+          <ReleaseMatrix analytics={reportAnalytics} selectedEquipmentId={selectedEquipment.id} />
+          <PackageSummary analytics={reportAnalytics} />
+          <SourceAuditPanel analytics={reportAnalytics} />
           <ExportActionPanel
             onPdf={exportPdf}
             onCopy={copyReport}
@@ -1163,36 +1176,44 @@ function ReportCover({
   kpis,
   selectedEquipment,
   scenario,
+  analytics,
 }: {
   kpis: ReturnType<typeof getMistura90Kpis>;
   selectedEquipment: Mistura90Equipment;
   scenario: Mistura90ScenarioResult;
+  analytics: Mistura90ReportAnalytics;
 }) {
   return (
     <Card className="gradient-industrial glow-card border-primary/20">
       <CardContent className="grid gap-5 p-5 lg:grid-cols-[1fr_0.82fr]">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Relatorio tecnico de saida</p>
-          <h2 className="mt-2 text-2xl font-semibold text-foreground">Resumo executivo do Projeto Mistura 90</h2>
+          <h2 className="mt-2 text-2xl font-semibold text-foreground">Dossie de liberacao do Projeto Mistura 90</h2>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-            Documento consolidado a partir da aba RESUMO e das memorias de calculo do Excel. A estrutura destaca
-            equipamentos, listas de compra/fabricacao, componentes criticos, pendencias de desenho e indicadores de liberacao.
+            Entrega consolidada a partir da aba RESUMO e das memorias de calculo do Excel. O pacote separa compra,
+            fabricacao, montagem, pendencias de desenho e criterios de qualidade para a rotina da i9TMG.
           </p>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
             <MiniStat label="Equipamento ativo" value={selectedEquipment.code} />
             <MiniStat label="Cenario" value={scenario.title.replace("Dimensionamento rapido de ", "")} />
+            <MiniStat label="Score geral" value={`${analytics.releaseScore}%`} />
             <MiniStat label="Equipamentos" value={kpis.equipments} />
             <MiniStat label="Itens" value={kpis.reportItems} />
           </div>
         </div>
         <div className="rounded-lg border border-border/70 bg-background/35 p-4">
-          <p className="text-sm font-semibold text-foreground">Checklist de liberacao</p>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-sm font-semibold text-foreground">Status de liberacao</p>
+            <Badge variant="outline" className={getReleaseBadgeClass(analytics.releaseScore, analytics.pendingItems)}>
+              {analytics.statusLabel}
+            </Badge>
+          </div>
           <div className="mt-3 space-y-3">
             {[
-              "Conferir pendencias de desenho em coxins, mancais, roletes e cavaletes.",
-              "Validar materiais SAE/ASTM e dimensoes de eixos antes da compra.",
-              "Separar correias elevadoras, transportadoras e telas por tipo de aplicacao.",
-              "Anexar este relatorio ao pacote tecnico de suprimentos e fabricacao.",
+              "Comprar somente itens com quantidade e descricao tecnica completas.",
+              "Liberar fabricacao apos validar eixos, tambores, gaiolas, tubos e cavaletes.",
+              "Separar pendencias por desenho, suprimentos e engenharia mecanica.",
+              "Anexar o PDF ao pacote tecnico de compra, fabricacao, montagem e qualidade.",
             ].map((item) => (
               <div key={item} className="flex gap-3 rounded-md bg-muted/20 p-3">
                 <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
@@ -1203,6 +1224,166 @@ function ReportCover({
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+function ReportExecutiveGrid({ analytics }: { analytics: Mistura90ReportAnalytics }) {
+  return (
+    <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <ExecutiveMetric title="Score geral" value={`${analytics.releaseScore}%`} detail={analytics.statusLabel} tone="success" />
+      <ExecutiveMetric title="Pendencias" value={analytics.pendingItems} detail="itens exigindo acao antes da liberacao" tone="warning" />
+      <ExecutiveMetric title="Itens criticos" value={analytics.highCriticalityItems} detail="acionamentos, eixos, mancais e tambores" tone="primary" />
+      <ExecutiveMetric title="Quantidade total" value={formatNumber(analytics.totalQuantity)} detail="soma das quantidades do RESUMO" tone="info" />
+    </section>
+  );
+}
+
+function ExecutiveMetric({ title, value, detail, tone }: { title: string; value: string | number; detail: string; tone: "primary" | "success" | "warning" | "info" }) {
+  const toneClass = {
+    primary: "text-primary",
+    success: "text-success",
+    warning: "text-warning",
+    info: "text-info",
+  }[tone];
+
+  return (
+    <Card className="gradient-industrial glow-card border-border/60">
+      <CardContent className="p-4">
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">{title}</p>
+        <p className={`mt-3 font-mono text-3xl font-semibold ${toneClass}`}>{value}</p>
+        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{detail}</p>
+      </CardContent>
+    </Card>
+  );
+}
+
+function ReleaseMatrix({ analytics, selectedEquipmentId }: { analytics: Mistura90ReportAnalytics; selectedEquipmentId: string }) {
+  return (
+    <Card className="gradient-industrial glow-card border-border/60">
+      <CardHeader className="border-b border-border/70 p-5">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Matriz de liberacao</p>
+        <CardTitle className="mt-1 text-xl text-foreground">Equipamentos, pendencias e score tecnico</CardTitle>
+      </CardHeader>
+      <CardContent className="grid gap-3 p-5 md:grid-cols-2 xl:grid-cols-3">
+        {analytics.equipmentReleases.map((release) => (
+          <div
+            key={release.equipment.id}
+            className={`rounded-lg border p-4 transition-all duration-200 hover:-translate-y-0.5 ${
+              release.equipment.id === selectedEquipmentId
+                ? "border-primary/45 bg-primary/10"
+                : "border-border/70 bg-background/35 hover:border-primary/30"
+            }`}
+          >
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="font-mono text-sm font-semibold text-primary">{release.equipment.code}</p>
+                <p className="mt-1 text-sm font-semibold text-foreground">{release.equipment.name}</p>
+              </div>
+              <Badge variant="outline" className={getReleaseBadgeClass(release.score, release.pendingCount)}>
+                {release.statusLabel}
+              </Badge>
+            </div>
+            <div className="mt-4 grid grid-cols-4 gap-2 text-center">
+              <MiniStat label="Score" value={`${release.score}%`} />
+              <MiniStat label="Itens" value={release.itemCount} />
+              <MiniStat label="Qtd." value={formatNumber(release.totalQuantity)} />
+              <MiniStat label="Pend." value={release.pendingCount} />
+            </div>
+          </div>
+        ))}
+      </CardContent>
+    </Card>
+  );
+}
+
+function PackageSummary({ analytics }: { analytics: Mistura90ReportAnalytics }) {
+  return (
+    <section className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
+      <Card className="gradient-industrial glow-card border-border/60">
+        <CardHeader className="border-b border-border/70 p-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Pacotes de entrega</p>
+          <CardTitle className="mt-1 text-xl text-foreground">Compra, fabricacao, montagem e qualidade</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-3 p-5 sm:grid-cols-2">
+          {analytics.deliverables.map(([name, description]) => (
+            <div key={name} className="rounded-lg border border-border/70 bg-background/35 p-4">
+              <p className="font-semibold text-foreground">{name}</p>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{description}</p>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      <Card className="gradient-industrial glow-card border-border/60">
+        <CardHeader className="border-b border-border/70 p-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Pendencias acionaveis</p>
+          <CardTitle className="mt-1 text-xl text-foreground">Proximas acoes antes da liberacao</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3 p-5">
+          {analytics.actionItems.slice(0, 6).map((action) => (
+            <div key={`${action.equipmentCode}-${action.item}-${action.action}`} className="rounded-lg border border-warning/25 bg-warning/10 p-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="font-mono text-sm font-semibold text-warning">{action.equipmentCode} | {action.item}</p>
+                <Badge variant="outline" className="border-warning/25 bg-warning/10 text-warning">
+                  {action.owner}
+                </Badge>
+              </div>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{action.action}</p>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+    </section>
+  );
+}
+
+function SourceAuditPanel({ analytics }: { analytics: Mistura90ReportAnalytics }) {
+  return (
+    <section className="grid gap-4 xl:grid-cols-[0.88fr_1.12fr]">
+      <Card className="gradient-industrial glow-card border-border/60">
+        <CardHeader className="border-b border-border/70 p-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Auditoria da fonte</p>
+          <CardTitle className="mt-1 text-xl text-foreground">O que foi lido da planilha protegida</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-3 p-5 sm:grid-cols-2">
+          {analytics.sourceAudit.map(([label, value]) => (
+            <div key={label} className="rounded-lg border border-border/70 bg-background/35 p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">{label}</p>
+              <p className="mt-2 break-words font-mono text-sm font-semibold text-foreground">{value}</p>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      <Card className="gradient-industrial glow-card border-border/60">
+        <CardHeader className="border-b border-border/70 p-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Resumo por pacote</p>
+          <CardTitle className="mt-1 text-xl text-foreground">Categorias que viram compra, fabricacao e montagem</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-3 p-5 md:grid-cols-2">
+          {analytics.categorySummaries.map((summary) => (
+            <div key={summary.category} className="rounded-lg border border-border/70 bg-background/35 p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/35 hover:bg-muted/20">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="font-semibold text-foreground">{summary.category}</p>
+                {summary.pending > 0 ? (
+                  <Badge variant="outline" className="border-warning/25 bg-warning/10 text-warning">
+                    {summary.pending} pend.
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="border-success/25 bg-success/10 text-success">
+                    OK
+                  </Badge>
+                )}
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <MiniStat label="Itens" value={summary.itemCount} />
+                <MiniStat label="Qtd. total" value={formatNumber(summary.quantity)} />
+              </div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+    </section>
   );
 }
 
@@ -1239,14 +1420,26 @@ function downloadFile(fileName: string, content: string, type: string) {
   URL.revokeObjectURL(url);
 }
 
-function buildReportText() {
+function buildReportText(
+  selectedEquipment: Mistura90Equipment,
+  scenario: Mistura90ScenarioResult,
+  analytics: Mistura90ReportAnalytics,
+) {
   const kpis = getMistura90Kpis();
   const lines = [
-    "i9TMG - RELATORIO TECNICO EQUIPAMENTOS MISTURA 90",
+    "i9TMG - DOSSIE TECNICO EQUIPAMENTOS MISTURA 90",
     `Fonte: ${mistura90Workbook.fileName}`,
     `Data de emissao: ${new Date().toLocaleDateString("pt-BR")}`,
+    `Equipamento ativo: ${selectedEquipment.code} - ${selectedEquipment.name}`,
+    `Cenario calculado: ${scenario.title}`,
     "",
-    "1. INDICADORES GERAIS",
+    "1. RESUMO EXECUTIVO",
+    `- Status de liberacao: ${analytics.statusLabel}`,
+    `- Score geral: ${analytics.releaseScore}%`,
+    `- Pendencias tecnicas: ${analytics.pendingItems}`,
+    `- Itens de criticidade alta: ${analytics.highCriticalityItems}`,
+    "",
+    "2. INDICADORES GERAIS",
     `- Equipamentos mapeados: ${kpis.equipments}`,
     `- Itens no resumo: ${kpis.reportItems}`,
     `- Quantidade total acumulada: ${formatNumber(kpis.totalQuantity)}`,
@@ -1256,7 +1449,13 @@ function buildReportText() {
     `- Roletes: ${kpis.rollerCount}`,
     `- Pendencias tecnicas: ${kpis.pendingItems}`,
     "",
-    "2. ESCOPO POR EQUIPAMENTO",
+    "3. AUDITORIA DA FONTE",
+    ...analytics.sourceAudit.map(([label, value]) => `- ${label}: ${value}`),
+    "",
+    "4. PACOTES DE ENTREGA",
+    ...analytics.deliverables.map(([name, description]) => `- ${name}: ${description}`),
+    "",
+    "5. ESCOPO POR EQUIPAMENTO",
   ];
 
   mistura90Equipments.forEach((equipment) => {
@@ -1274,15 +1473,12 @@ function buildReportText() {
 
   lines.push(
     "",
-    "3. PENDENCIAS DE ENGENHARIA",
-    ...mistura90ReportItems
-      .filter((item) => getMistura90Criticality(item) === "Pendente")
-      .map((item) => {
-        const equipment = getEquipmentById(item.equipmentId);
-        return `- ${equipment?.code} | ${item.item}: ${item.note || "Quantidade ou descricao pendente no resumo."}`;
-      }),
+    "6. PENDENCIAS DE ENGENHARIA",
+    ...analytics.actionItems.map(
+      (item) => `- ${item.equipmentCode} | ${item.item} | ${item.owner}: ${item.action}`,
+    ),
     "",
-    "4. PARECER",
+    "7. PARECER",
     "A memoria da planilha foi consolidada em modulo tecnico navegavel. Antes de emitir pedido de compra ou liberacao de fabricacao, revisar todos os itens classificados como Pendente e anexar desenho final quando solicitado.",
   );
 
