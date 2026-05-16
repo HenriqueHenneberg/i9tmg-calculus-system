@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, Flame, Search, SlidersHorizontal, Star } from "lucide-react";
+import { AlertTriangle, ArrowRight, BookOpenCheck, Calculator, Flame, Search, SlidersHorizontal, Star, Zap, type LucideIcon } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { CalculationPanel } from "@/components/CalculationPanel";
@@ -16,7 +16,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useIndustrialWorkspace } from "@/contexts/IndustrialWorkspaceContext";
 import { evaluateFormula } from "@/lib/formula-engine";
 import { rankFormulas } from "@/lib/industrial-assistant";
-import type { Formula, SectorId } from "@/lib/industrial-data";
+import type { Formula, Sector, SectorId } from "@/lib/industrial-data";
 
 export default function Calculos() {
   const { formulas, sectors, favoriteIds, isFavorite, toggleFavorite, recordCalculation, preferences } = useIndustrialWorkspace();
@@ -113,9 +113,16 @@ export default function Calculos() {
   );
 
   const mostUsed = useMemo(
-    () => [...formulas].sort((a, b) => b.usageCount - a.usageCount).slice(0, 6),
+    () => [...formulas].sort((a, b) => b.usageCount - a.usageCount).slice(0, 8),
     [formulas],
   );
+
+  const prioritySectors = useMemo(() => {
+    const ids: Array<SectorId | "todos"> = ["todos", "eletrica", "mecanica", "producao", "hidraulica", "elevadores_mistura_90"];
+    return ids
+      .map((id) => (id === "todos" ? null : sectors.find((sector) => sector.id === id)))
+      .filter((sector): sector is Sector => Boolean(sector));
+  }, [sectors]);
 
   const selectFormula = (formulaId: string) => {
     setSelectedFormulaId(formulaId);
@@ -203,62 +210,73 @@ export default function Calculos() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-[1680px] flex-col gap-5">
-      <section className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <Badge className="border-primary/25 bg-primary/15 text-primary hover:bg-primary/15">Symbolab industrial</Badge>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-foreground">Calculos tecnicos</h1>
-          <p className="mt-2 max-w-3xl text-sm leading-relaxed text-muted-foreground">
-            Escolha uma formula da biblioteca, use exemplos prontos, marque favoritos e acompanhe substituicao numerica
-            passo a passo.
-          </p>
-        </div>
-        <div className="grid grid-cols-1 gap-2 text-center sm:grid-cols-3">
-          <Metric label="Formulas" value={formulas.length} />
-          <Metric label="Setores" value={sectors.length} />
-          <Metric label="Favoritos" value={favoriteIds.length} />
-        </div>
-      </section>
-
-      <section className="rounded-lg border border-primary/25 bg-primary/10 p-4">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Destaque tecnico</p>
-            <h2 className="mt-1 text-lg font-semibold text-foreground">Elevadores Industriais</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Calculos de capacidade, correias, tensoes, eixos, potencia, redutores, acoplamentos e rolamentos.
+    <div className="mx-auto flex w-full max-w-[1720px] flex-col gap-5">
+      <section className="rounded-lg border border-primary/25 bg-[linear-gradient(135deg,hsl(var(--card)),hsl(var(--surface-elevated))_58%,hsl(var(--primary)/0.12))] p-5 glow-card">
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
+          <div className="min-w-0">
+            <Badge className="border-primary/25 bg-primary/15 text-primary hover:bg-primary/15">Calculadora central</Badge>
+            <h1 className="mt-3 text-balance text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
+              Faca a conta tecnica aqui
+            </h1>
+            <p className="mt-3 max-w-3xl text-sm leading-relaxed text-muted-foreground md:text-base">
+              Escolha uma formula, digite os numeros e veja resultado, unidade e memoria de calculo na mesma tela.
+              A biblioteca ficou como apoio; o fluxo principal agora esta logo no primeiro bloco.
             </p>
+
+            <div className="mt-5 grid gap-3 md:grid-cols-3">
+              <WorkflowHint index="1" title="Escolha" text="Use busca, setor ou formula mais usada." />
+              <WorkflowHint index="2" title="Preencha" text="Digite valores com unidade visivel." />
+              <WorkflowHint index="3" title="Calcule" text="Resultado grande e passo a passo." />
+            </div>
           </div>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => setSelectedSector("elevadores_mistura_90")}
-            className="border-primary/30 bg-background/30 text-foreground hover:bg-primary hover:text-primary-foreground"
-          >
-            Ver formulas de elevadores
-          </Button>
+
+          <div className="rounded-lg border border-primary/25 bg-background/35 p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Formula ativa</p>
+            <h2 className="mt-2 text-xl font-semibold text-foreground">{selectedFormula.name}</h2>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{selectedFormula.simpleExplanation}</p>
+            <div className="mt-4 technical-code text-sm">{selectedFormula.expression}</div>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Badge variant="outline" className="border-primary/25 bg-primary/10 text-primary">
+                {selectedFormula.sector}
+              </Badge>
+              <Badge variant="outline" className="border-border bg-muted/25 text-muted-foreground">
+                {selectedFormula.variables.length} entradas
+              </Badge>
+              <Badge variant="outline" className="border-success/25 bg-success/10 text-success">
+                {selectedFormula.resultUnit || "sem unidade"}
+              </Badge>
+            </div>
+          </div>
         </div>
       </section>
 
-      <TechnicalAssistant
-        formulas={formulas}
-        selectedFormula={selectedFormula}
-        onSelectFormula={selectFormula}
-        onApplyValues={applyDetectedValues}
-        onSearch={(query) => setSearch(query)}
-      />
+      <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
+        <SectorShortcut
+          title="Todos"
+          detail={`${formulas.length} formulas`}
+          active={selectedSector === "todos"}
+          icon={Calculator}
+          onClick={() => setSelectedSector("todos")}
+        />
+        {prioritySectors.map((sector) => (
+          <SectorShortcut
+            key={sector.id}
+            title={sector.name}
+            detail={`${sector.formulas} formulas`}
+            active={selectedSector === sector.id}
+            icon={sector.id === "eletrica" || sector.id === "energia" ? Zap : Calculator}
+            onClick={() => setSelectedSector(sector.id)}
+          />
+        ))}
+      </section>
 
-      {(selectedSector === "elevadores_mistura_90" || selectedFormula.sectorId === "elevadores_mistura_90") && (
-        <Mistura90Guide formulas={formulas} onSelectFormula={selectFormula} onApplyValues={applyDetectedValues} />
-      )}
-
-      <section className="grid min-h-[760px] gap-4 xl:grid-cols-[300px_minmax(0,1fr)] 2xl:grid-cols-[320px_minmax(0,1fr)_380px]">
-        <Card className="gradient-industrial glow-card min-h-[560px] border-border/60">
+      <section className="grid gap-4 xl:grid-cols-[390px_minmax(0,1fr)]">
+        <Card className="gradient-industrial glow-card order-2 min-h-[560px] border-border/60 xl:order-1">
           <CardHeader className="border-b border-border/70 p-4">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Biblioteca</p>
-                <CardTitle className="mt-1 text-lg text-foreground">Formulas inteligentes</CardTitle>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Escolha a formula</p>
+                <CardTitle className="mt-1 text-lg text-foreground">Biblioteca de calculos</CardTitle>
               </div>
               <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
             </div>
@@ -267,8 +285,8 @@ export default function Calculos() {
               <Input
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                placeholder="Buscar formula, tag, variavel ou setor"
-                className="border-border bg-muted/25 pl-9 text-foreground focus-visible:ring-primary/40"
+                placeholder="Ex: corrente, motor, torque, vazao..."
+                className="h-11 border-border bg-muted/25 pl-9 text-foreground focus-visible:ring-primary/40"
               />
             </div>
             <div className="mt-3 flex max-h-32 flex-wrap gap-2 overflow-auto pr-1">
@@ -283,7 +301,7 @@ export default function Calculos() {
             </div>
           </CardHeader>
           <CardContent className="p-0">
-            <ScrollArea className="h-[610px]">
+            <ScrollArea className="h-[650px]">
               <div className="space-y-3 p-4">
                 {favoriteFormulas.length > 0 && (
                   <div className="rounded-lg border border-primary/25 bg-primary/10 p-3">
@@ -299,9 +317,10 @@ export default function Calculos() {
                           variant="outline"
                           size="sm"
                           onClick={() => selectFormula(formula.id)}
-                          className="justify-start border-border bg-background/30 text-left text-foreground hover:bg-muted/40"
+                          className="justify-between border-border bg-background/30 text-left text-foreground hover:bg-muted/40"
                         >
                           <span className="truncate">{formula.name}</span>
+                          <ArrowRight className="h-3.5 w-3.5" />
                         </Button>
                       ))}
                     </div>
@@ -339,7 +358,7 @@ export default function Calculos() {
                 ))}
                 {filteredFormulas.length === 0 && (
                   <div className="rounded-lg border border-border/70 bg-muted/20 p-5 text-center text-sm text-muted-foreground">
-                    Nenhuma formula encontrada.
+                    Nenhuma formula encontrada. Tente buscar por setor, variavel ou equipamento.
                   </div>
                 )}
               </div>
@@ -347,49 +366,99 @@ export default function Calculos() {
           </CardContent>
         </Card>
 
-        <div className="flex min-h-0 flex-col gap-4">
-          <CalculationPanel
-            formula={selectedFormula}
-            values={values}
-            errors={errors}
-            loading={loading}
-            favorite={isFavorite(selectedFormula.id)}
-            onToggleFavorite={() => toggleFavorite(selectedFormula.id)}
-            onUseExample={fillExample}
-            onChange={(name, value) => {
-              setValues((current) => ({ ...current, [name]: value }));
-              setErrors((current) => ({ ...current, [name]: "" }));
-              setResult(null);
-              setCalculationError(null);
-            }}
-            onCalculate={handleCalculate}
-            onReset={handleReset}
-          />
+        <div className="order-1 grid min-w-0 gap-4 xl:order-2 2xl:grid-cols-[minmax(0,1fr)_390px]">
+          <div className="min-w-0 space-y-4">
+            <CalculationPanel
+              formula={selectedFormula}
+              values={values}
+              errors={errors}
+              loading={loading}
+              result={result}
+              favorite={isFavorite(selectedFormula.id)}
+              onToggleFavorite={() => toggleFavorite(selectedFormula.id)}
+              onUseExample={fillExample}
+              onChange={(name, value) => {
+                setValues((current) => ({ ...current, [name]: value }));
+                setErrors((current) => ({ ...current, [name]: "" }));
+                setResult(null);
+                setCalculationError(null);
+              }}
+              onCalculate={handleCalculate}
+              onReset={handleReset}
+            />
 
-          {calculationError && (
-            <div className="rounded-lg border border-destructive/25 bg-destructive/10 p-4">
-              <div className="flex items-start gap-3">
-                <AlertTriangle className="mt-0.5 h-4 w-4 text-destructive" />
-                <p className="text-sm leading-relaxed text-muted-foreground">{calculationError}</p>
+            {calculationError && (
+              <div className="rounded-lg border border-destructive/25 bg-destructive/10 p-4">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 text-destructive" />
+                  <p className="text-sm leading-relaxed text-muted-foreground">{calculationError}</p>
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {selectedFormula.status !== "validada" && selectedFormula.status !== "aprovada" && (
-            <div className="rounded-lg border border-warning/25 bg-warning/10 p-4">
-              <div className="flex items-start gap-3">
-                <AlertTriangle className="mt-0.5 h-4 w-4 text-warning" />
-                <p className="text-sm leading-relaxed text-muted-foreground">
-                  Esta formula esta com status {selectedFormula.status.replace("_", " ")}. Valide criterios internos antes de usar em campo.
-                </p>
+            {selectedFormula.status !== "validada" && selectedFormula.status !== "aprovada" && (
+              <div className="rounded-lg border border-warning/25 bg-warning/10 p-4">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 text-warning" />
+                  <p className="text-sm leading-relaxed text-muted-foreground">
+                    Esta formula esta com status {selectedFormula.status.replace("_", " ")}. Valide criterios internos antes de usar em campo.
+                  </p>
+                </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
 
-        <div className="min-w-0 xl:col-span-2 2xl:col-span-1">
-          <StepByStepViewer formula={selectedFormula} values={values} result={result} />
+          <div className="min-w-0 space-y-4">
+            <StepByStepViewer formula={selectedFormula} values={values} result={result} />
+            <Card className="gradient-industrial glow-card border-border/60">
+              <CardHeader className="border-b border-border/70 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Ajuda rapida</p>
+                <CardTitle className="mt-1 flex items-center gap-2 text-lg text-foreground">
+                  <BookOpenCheck className="h-5 w-5 text-primary" />
+                  Onde esta a conta?
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 p-4 text-sm leading-relaxed text-muted-foreground">
+                <p>O calculo principal fica no painel grande ao lado: entradas, botao Calcular e resultado.</p>
+                <p>A biblioteca so troca a formula ativa. A memoria mostra como o resultado foi montado.</p>
+              </CardContent>
+            </Card>
+          </div>
         </div>
+      </section>
+
+      <section className="grid gap-4 xl:grid-cols-[1fr_0.95fr]">
+        <TechnicalAssistant
+          formulas={formulas}
+          selectedFormula={selectedFormula}
+          onSelectFormula={selectFormula}
+          onApplyValues={applyDetectedValues}
+          onSearch={(query) => setSearch(query)}
+        />
+
+        {(selectedSector === "elevadores_mistura_90" || selectedFormula.sectorId === "elevadores_mistura_90") ? (
+          <Mistura90Guide formulas={formulas} onSelectFormula={selectFormula} onApplyValues={applyDetectedValues} />
+        ) : (
+          <Card className="gradient-industrial glow-card border-border/60">
+            <CardHeader className="border-b border-border/70 p-5">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Sugestao de uso</p>
+              <CardTitle className="mt-1 text-lg text-foreground">Comece pelos setores principais</CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-3 p-5 sm:grid-cols-2">
+              {prioritySectors.slice(0, 4).map((sector) => (
+                <button
+                  key={sector.id}
+                  type="button"
+                  onClick={() => setSelectedSector(sector.id)}
+                  className="rounded-lg border border-border/70 bg-background/35 p-4 text-left transition-all hover:-translate-y-0.5 hover:border-primary/35 hover:bg-muted/25"
+                >
+                  <p className="font-semibold text-foreground">{sector.name}</p>
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{sector.description}</p>
+                </button>
+              ))}
+            </CardContent>
+          </Card>
+        )}
       </section>
     </div>
   );
@@ -402,6 +471,50 @@ const statusRank = {
   rascunho: 2,
   arquivada: 1,
 };
+
+function WorkflowHint({ index, title, text }: { index: string; title: string; text: string }) {
+  return (
+    <div className="rounded-lg border border-border/70 bg-background/35 p-3">
+      <div className="flex items-center gap-3">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/15 font-mono text-sm font-semibold text-primary">
+          {index}
+        </span>
+        <div className="min-w-0">
+          <p className="font-semibold text-foreground">{title}</p>
+          <p className="text-sm text-muted-foreground">{text}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SectorShortcut({
+  title,
+  detail,
+  active,
+  icon: Icon,
+  onClick,
+}: {
+  title: string;
+  detail: string;
+  active: boolean;
+  icon: LucideIcon;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-lg border p-4 text-left transition-all hover:-translate-y-0.5 ${
+        active ? "border-primary/45 bg-primary/15" : "border-border/70 bg-card/55 hover:border-primary/35 hover:bg-muted/25"
+      }`}
+    >
+      <Icon className="h-4 w-4 text-primary" />
+      <p className="mt-3 font-semibold text-foreground">{title}</p>
+      <p className="mt-1 text-xs text-muted-foreground">{detail}</p>
+    </button>
+  );
+}
 
 function FilterButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: string }) {
   return (
@@ -416,15 +529,6 @@ function FilterButton({ active, onClick, children }: { active: boolean; onClick:
     >
       {children}
     </button>
-  );
-}
-
-function Metric({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="rounded-lg border border-border/70 bg-card/60 px-4 py-3">
-      <p className="font-mono text-xl font-semibold text-foreground">{value}</p>
-      <p className="text-xs text-muted-foreground">{label}</p>
-    </div>
   );
 }
 

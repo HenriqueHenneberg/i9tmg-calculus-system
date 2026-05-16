@@ -61,20 +61,39 @@ export default function Dashboard() {
 
   return (
     <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-6">
-      <section className="flex flex-col gap-4 rounded-lg border border-border/60 bg-card/50 p-5 glow-card lg:flex-row lg:items-center lg:justify-between">
-        <div>
+      <section className="flex flex-col gap-5 rounded-lg border border-primary/25 bg-[linear-gradient(135deg,hsl(var(--card)),hsl(var(--surface-elevated))_58%,hsl(var(--primary)/0.10))] p-5 glow-card lg:flex-row lg:items-center lg:justify-between">
+        <div className="min-w-0">
           <div className="flex items-center gap-2">
             <Badge className="border-primary/25 bg-primary/15 text-primary hover:bg-primary/15">i9TMG Industrial</Badge>
             <Badge variant="outline" className="border-success/25 bg-success/10 text-success">
               Online
             </Badge>
           </div>
-          <h1 className="mt-4 text-3xl font-semibold tracking-tight text-foreground">Dashboard tecnico</h1>
+          <h1 className="mt-4 text-balance text-3xl font-semibold tracking-tight text-foreground md:text-4xl">Centro de calculo i9TMG</h1>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-            Ola, {userName}. Visao consolidada de calculos, setores, formulas e validacoes para operacao industrial.
+            Ola, {userName}. Use este painel para entrar direto no calculo, acompanhar formulas validadas e acessar o projeto Mistura 90.
           </p>
+          <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+            <Button
+              type="button"
+              onClick={() => navigate("/calculos")}
+              className="h-11 bg-primary text-primary-foreground hover:bg-highlight-glow"
+            >
+              <Calculator className="h-4 w-4" />
+              Calcular agora
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => navigate("/mistura90-excel")}
+              className="h-11 border-border bg-background/35 text-foreground hover:bg-muted/35"
+            >
+              <FileSpreadsheet className="h-4 w-4" />
+              Projeto Mistura 90
+            </Button>
+          </div>
         </div>
-        <div className="grid grid-cols-1 gap-3 text-center sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 text-center sm:grid-cols-3 lg:min-w-[420px]">
           <div className="rounded-lg border border-border/70 bg-muted/20 px-4 py-3">
             <p className="font-mono text-2xl font-semibold text-primary">98.4%</p>
             <p className="text-xs text-muted-foreground">Confiabilidade</p>

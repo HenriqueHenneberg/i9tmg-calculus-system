@@ -11,6 +11,7 @@ interface CalculationPanelProps {
   errors?: Record<string, string>;
   loading?: boolean;
   favorite?: boolean;
+  result?: string | null;
   onChange: (name: string, value: string) => void;
   onCalculate: () => void;
   onReset: () => void;
@@ -24,6 +25,7 @@ export function CalculationPanel({
   errors = {},
   loading,
   favorite,
+  result,
   onChange,
   onCalculate,
   onReset,
@@ -31,11 +33,11 @@ export function CalculationPanel({
   onUseExample,
 }: CalculationPanelProps) {
   return (
-    <Card className="gradient-industrial glow-card flex h-full min-w-0 flex-col border-border/60">
+    <Card className="gradient-industrial glow-card flex h-full min-w-0 flex-col border-primary/25">
       <CardHeader className="border-b border-border/70 p-5">
         <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
           <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Console de calculo</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">1. Formula selecionada</p>
             <CardTitle className="mt-2 text-xl leading-snug text-foreground">{formula.name}</CardTitle>
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">{formula.description}</p>
             <div className="mt-3 flex flex-wrap gap-2">
@@ -47,7 +49,8 @@ export function CalculationPanel({
             </div>
           </div>
           <div className="flex min-w-0 flex-col gap-2 md:max-w-[320px]">
-            <div className="technical-code text-sm">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Expressao</p>
+            <div className="technical-code mt-2 text-sm">
               {formula.expression}
             </div>
             <div className="flex gap-2">
@@ -80,6 +83,10 @@ export function CalculationPanel({
         </div>
       </CardHeader>
       <CardContent className="flex flex-1 flex-col p-5">
+        <div className="mb-4 flex flex-col gap-1">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">2. Preencha os valores</p>
+          <p className="text-sm text-muted-foreground">Use ponto ou virgula para decimais. Campos vazios bloqueiam o calculo.</p>
+        </div>
         <div className="grid gap-4 md:grid-cols-2">
           {formula.variables.map((variable) => (
             <TechInput
@@ -94,6 +101,22 @@ export function CalculationPanel({
               onChange={(event) => onChange(variable.name, event.target.value)}
             />
           ))}
+        </div>
+
+        <div className="mt-5 rounded-lg border border-primary/25 bg-primary/10 p-4">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">3. Resultado</p>
+              <p className="mt-1 text-sm text-muted-foreground">A resposta aparece aqui depois de clicar em Calcular.</p>
+            </div>
+            <div className="rounded-lg border border-primary/25 bg-background/35 px-4 py-3 text-left lg:min-w-56 lg:text-right">
+              <p className="font-mono text-3xl font-semibold text-primary">
+                {result ?? "--"}
+                {result ? <span className="ml-2 text-base text-muted-foreground">{formula.resultUnit}</span> : null}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">{result ? "Calculado e pronto para historico" : "Aguardando entradas"}</p>
+            </div>
+          </div>
         </div>
 
         <div className="mt-5 rounded-lg border border-border/70 bg-muted/15 p-4">

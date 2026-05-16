@@ -53,8 +53,10 @@
     --success: 145 60% 42%;
     --warning: 38 90% 55%;
     --info: 200 80% 55%;
+    --app-font-scale: 1;
 
     font-family: 'Inter', system-ui, sans-serif;
+    font-size: calc(16px * var(--app-font-scale));
   }
 
   :root[data-theme="light"] {
@@ -124,6 +126,27 @@
     --info: 280 70% 62%;
     --destructive: 0 72% 55%;
   }
+
+  :root[data-high-contrast="true"] {
+    --foreground: 0 0% 100%;
+    --card-foreground: 0 0% 100%;
+    --popover-foreground: 0 0% 100%;
+    --muted-foreground: 210 28% 82%;
+    --border: 204 42% 42%;
+    --input: 204 42% 42%;
+    --card: 205 52% 13%;
+    --surface-elevated: 198 45% 15%;
+  }
+
+  :root[data-theme="light"][data-high-contrast="true"] {
+    --background: 210 38% 98%;
+    --foreground: 211 80% 8%;
+    --card-foreground: 211 80% 8%;
+    --popover-foreground: 211 80% 8%;
+    --muted-foreground: 207 24% 25%;
+    --border: 207 26% 50%;
+    --input: 207 26% 50%;
+  }
 }
 
 @layer base {
@@ -136,6 +159,43 @@
     @apply bg-background text-foreground antialiased;
     background: hsl(var(--background));
     overflow-x: hidden;
+  }
+
+  :root[data-readable-text="true"] body,
+  :root[data-readable-text="true"] p,
+  :root[data-readable-text="true"] li,
+  :root[data-readable-text="true"] td,
+  :root[data-readable-text="true"] th,
+  :root[data-readable-text="true"] label {
+    line-height: 1.65;
+  }
+
+  :root[data-readable-text="true"] .line-clamp-1,
+  :root[data-readable-text="true"] .line-clamp-2,
+  :root[data-readable-text="true"] .line-clamp-3 {
+    display: block;
+    overflow: visible;
+    -webkit-line-clamp: unset;
+  }
+
+  :root[data-comprehension-mode="true"] .technical-code,
+  :root[data-comprehension-mode="true"] .font-mono {
+    line-height: 1.7;
+  }
+
+  :root[data-strong-focus="true"] :focus-visible {
+    outline: 3px solid hsl(var(--ring));
+    outline-offset: 3px;
+    box-shadow: 0 0 0 6px hsl(var(--ring) / 0.18);
+  }
+
+  :root[data-reduced-motion="true"] *,
+  :root[data-reduced-motion="true"] *::before,
+  :root[data-reduced-motion="true"] *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
   }
 
   :root[data-compact="true"] main {

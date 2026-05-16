@@ -1,4 +1,21 @@
-import { Bell, Calculator, CheckCircle2, Clock3, LogOut, Search, ShieldAlert, User } from "lucide-react";
+import {
+  Accessibility,
+  Bell,
+  Calculator,
+  CaseSensitive,
+  CheckCircle2,
+  Clock3,
+  Eye,
+  Focus,
+  LogOut,
+  Minus,
+  Plus,
+  RotateCcw,
+  Search,
+  ShieldAlert,
+  User,
+  type LucideIcon,
+} from "lucide-react";
 import { useMemo, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { SidebarTrigger } from "@/components/ui/sidebar";
@@ -12,7 +29,7 @@ export function Topbar() {
   const [searchFocused, setSearchFocused] = useState(false);
   const [globalSearch, setGlobalSearch] = useState("");
   const { user, logout } = useAuth();
-  const { formulas, history } = useIndustrialWorkspace();
+  const { formulas, history, preferences, updatePreferences } = useIndustrialWorkspace();
   const navigate = useNavigate();
   const pendingFormulas = useMemo(
     () => formulas.filter((formula) => formula.status === "rascunho" || formula.status === "em_revisao").slice(0, 4),
@@ -43,6 +60,15 @@ export function Topbar() {
       </div>
 
       <div className="flex min-w-0 shrink-0 items-center gap-1.5 sm:gap-2">
+        <Button
+          type="button"
+          onClick={() => navigate("/calculos")}
+          className="hidden h-9 bg-primary px-3 text-xs font-semibold text-primary-foreground hover:bg-highlight-glow sm:inline-flex"
+        >
+          <Calculator className="h-4 w-4" />
+          Calcular
+        </Button>
+
         <form
           onSubmit={runSearch}
           className={`hidden items-center gap-2 rounded-lg border px-2 py-1.5 transition-all duration-200 md:flex ${
@@ -88,6 +114,106 @@ export function Topbar() {
                 Buscar
               </Button>
             </form>
+          </PopoverContent>
+        </Popover>
+
+        <Popover>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              className="rounded-lg p-2 text-muted-foreground transition-all hover:-translate-y-0.5 hover:bg-muted/50 hover:text-foreground"
+              title="Acessibilidade"
+            >
+              <Accessibility className="h-4 w-4" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent align="end" className="w-[min(23rem,calc(100vw-1.5rem))] border-border bg-popover p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-foreground">Acessibilidade rapida</p>
+                <p className="mt-1 text-xs text-muted-foreground">Ajustes globais de leitura e percepcao.</p>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() =>
+                  updatePreferences({
+                    fontScale: 100,
+                    highContrast: false,
+                    readableText: false,
+                    reducedMotion: false,
+                    strongFocus: true,
+                    comprehensionMode: false,
+                  })
+                }
+                className="h-8 px-2 text-xs text-muted-foreground"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+                Reset
+              </Button>
+            </div>
+
+            <div className="mt-4 rounded-lg border border-border/70 bg-muted/20 p-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <CaseSensitive className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-medium text-foreground">Fonte</span>
+                </div>
+                <span className="font-mono text-sm text-primary">{preferences.fontScale}%</span>
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => updatePreferences({ fontScale: Math.max(90, preferences.fontScale - 5) })}
+                  className="border-border bg-background/35"
+                >
+                  <Minus className="h-3.5 w-3.5" />
+                  A-
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => updatePreferences({ fontScale: Math.min(125, preferences.fontScale + 5) })}
+                  className="border-border bg-background/35"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  A+
+                </Button>
+              </div>
+            </div>
+
+            <div className="mt-3 grid gap-2">
+              <QuickAccessButton
+                icon={Eye}
+                title="Alto contraste"
+                active={preferences.highContrast}
+                onClick={() => updatePreferences({ highContrast: !preferences.highContrast })}
+              />
+              <QuickAccessButton
+                icon={Focus}
+                title="Foco forte"
+                active={preferences.strongFocus}
+                onClick={() => updatePreferences({ strongFocus: !preferences.strongFocus })}
+              />
+              <QuickAccessButton
+                icon={CaseSensitive}
+                title="Leitura ampliada"
+                active={preferences.readableText}
+                onClick={() => updatePreferences({ readableText: !preferences.readableText })}
+              />
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => navigate("/configuracoes")}
+              className="mt-3 w-full border-border bg-muted/25 text-foreground"
+            >
+              Abrir configuracoes completas
+            </Button>
           </PopoverContent>
         </Popover>
 
@@ -205,5 +331,35 @@ export function Topbar() {
 
       </div>
     </header>
+  );
+}
+
+function QuickAccessButton({
+  icon: Icon,
+  title,
+  active,
+  onClick,
+}: {
+  icon: LucideIcon;
+  title: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex items-center justify-between gap-3 rounded-lg border p-3 text-left transition-all hover:-translate-y-0.5 ${
+        active ? "border-primary/35 bg-primary/15 text-foreground" : "border-border/70 bg-muted/20 text-muted-foreground hover:border-primary/30"
+      }`}
+    >
+      <span className="flex min-w-0 items-center gap-2">
+        <Icon className="h-4 w-4 shrink-0 text-primary" />
+        <span className="text-sm font-medium">{title}</span>
+      </span>
+      <span className={`rounded-md px-2 py-1 text-[11px] font-semibold ${active ? "bg-primary text-primary-foreground" : "bg-background/50 text-muted-foreground"}`}>
+        {active ? "Ativo" : "Off"}
+      </span>
+    </button>
   );
 }

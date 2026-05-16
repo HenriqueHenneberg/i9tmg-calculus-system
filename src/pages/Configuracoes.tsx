@@ -1,4 +1,20 @@
-import { Bell, Eye, Moon, Palette, Save, ShieldCheck, SlidersHorizontal, Sun, type LucideIcon } from "lucide-react";
+import {
+  Bell,
+  BookOpenCheck,
+  Brain,
+  CaseSensitive,
+  Eye,
+  Focus,
+  Moon,
+  MousePointer2,
+  Palette,
+  RotateCcw,
+  Save,
+  ShieldCheck,
+  SlidersHorizontal,
+  Sun,
+  type LucideIcon,
+} from "lucide-react";
 import type { ReactNode } from "react";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -57,6 +73,17 @@ const colorVisionOptions: Array<{
 export default function Configuracoes() {
   const { userName, setUserName, sectors, preferences, updatePreferences } = useIndustrialWorkspace();
   const activeColorVision = colorVisionOptions.find((option) => option.value === preferences.colorVisionMode) || colorVisionOptions[0];
+  const resetAccessibility = () => {
+    updatePreferences({
+      fontScale: 100,
+      highContrast: false,
+      readableText: false,
+      reducedMotion: false,
+      strongFocus: true,
+      comprehensionMode: false,
+    });
+    toast.success("Acessibilidade voltou ao padrao.");
+  };
 
   return (
     <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-6">
@@ -79,9 +106,10 @@ export default function Configuracoes() {
       </section>
 
       <Tabs defaultValue="perfil" className="space-y-4">
-        <TabsList className="grid h-auto w-full max-w-xl grid-cols-1 bg-muted/25 p-1 sm:grid-cols-3">
+        <TabsList className="grid h-auto w-full max-w-3xl grid-cols-1 bg-muted/25 p-1 sm:grid-cols-2 lg:grid-cols-4">
           <TabsTrigger value="perfil">Perfil</TabsTrigger>
           <TabsTrigger value="tema">Tema</TabsTrigger>
+          <TabsTrigger value="acessibilidade">Acessibilidade</TabsTrigger>
           <TabsTrigger value="preferencias">Preferencias</TabsTrigger>
         </TabsList>
 
@@ -220,6 +248,134 @@ export default function Configuracoes() {
           </div>
         </TabsContent>
 
+        <TabsContent value="acessibilidade" className="mt-0">
+          <div className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
+            <Card className="gradient-industrial glow-card border-border/60">
+              <CardHeader className="flex flex-col gap-3 border-b border-border/70 p-5 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Perceptibilidade</p>
+                  <CardTitle className="mt-1 text-xl text-foreground">Ver melhor, focar melhor, cansar menos</CardTitle>
+                </div>
+                <Button type="button" variant="outline" onClick={resetAccessibility} className="border-border bg-muted/25">
+                  <RotateCcw className="h-4 w-4" />
+                  Restaurar
+                </Button>
+              </CardHeader>
+              <CardContent className="space-y-5 p-5">
+                <div className="rounded-lg border border-border/70 bg-muted/20 p-5">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="min-w-0">
+                      <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                        <CaseSensitive className="h-4 w-4 text-primary" />
+                        Tamanho global da fonte
+                      </p>
+                      <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                        Ajusta textos, tabelas, botoes e campos em todo o sistema.
+                      </p>
+                    </div>
+                    <span className="min-w-20 whitespace-nowrap rounded-md border border-primary/25 bg-primary/10 px-3 py-1 text-center font-mono text-sm text-primary">
+                      {preferences.fontScale}%
+                    </span>
+                  </div>
+                  <Slider
+                    value={[preferences.fontScale]}
+                    min={90}
+                    max={125}
+                    step={5}
+                    onValueChange={(value) => updatePreferences({ fontScale: value[0] || 100 })}
+                    className="mt-7"
+                  />
+                  <div className="mt-4 flex flex-wrap justify-between gap-2 text-xs text-muted-foreground">
+                    <span>90% compacto</span>
+                    <span>100% padrao</span>
+                    <span>125% leitura ampliada</span>
+                  </div>
+                </div>
+
+                <SettingRow
+                  icon={Eye}
+                  title="Alto contraste"
+                  description="Aumenta diferenca entre fundo, textos, bordas e estados para leitura em monitor, TV e ambientes claros."
+                  control={<Switch checked={preferences.highContrast} onCheckedChange={(highContrast) => updatePreferences({ highContrast })} />}
+                />
+                <SettingRow
+                  icon={Focus}
+                  title="Foco visivel reforcado"
+                  description="Mostra contorno forte ao navegar por teclado, formularios, filtros, abas e botoes."
+                  control={<Switch checked={preferences.strongFocus} onCheckedChange={(strongFocus) => updatePreferences({ strongFocus })} />}
+                />
+                <SettingRow
+                  icon={MousePointer2}
+                  title="Reduzir movimento"
+                  description="Diminui animacoes e transicoes para usuarios sensiveis a movimento ou em operacao prolongada."
+                  control={<Switch checked={preferences.reducedMotion} onCheckedChange={(reducedMotion) => updatePreferences({ reducedMotion })} />}
+                />
+              </CardContent>
+            </Card>
+
+            <div className="grid gap-4">
+              <Card className="gradient-industrial glow-card border-border/60">
+                <CardHeader className="border-b border-border/70 p-5">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Compreensibilidade</p>
+                  <CardTitle className="mt-1 text-xl text-foreground">Texto mais claro para decisao tecnica</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-5 p-5">
+                  <SettingRow
+                    icon={BookOpenCheck}
+                    title="Leitura tecnica ampliada"
+                    description="Aumenta respiro de linhas e evita cortes em nomes, descricoes, formulas e observacoes."
+                    control={<Switch checked={preferences.readableText} onCheckedChange={(readableText) => updatePreferences({ readableText })} />}
+                  />
+                  <SettingRow
+                    icon={Brain}
+                    title="Modo didatico"
+                    description="Mostra uma faixa de apoio, expande textos tecnicos e prioriza explicacoes completas em vez de blocos truncados."
+                    control={<Switch checked={preferences.comprehensionMode} onCheckedChange={(comprehensionMode) => updatePreferences({ comprehensionMode })} />}
+                  />
+                  <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1 2xl:grid-cols-3">
+                    <AccessibilityPreset
+                      title="Operador"
+                      text="Fonte maior, contraste e foco forte."
+                      onClick={() => updatePreferences({ fontScale: 115, highContrast: true, readableText: true, strongFocus: true })}
+                    />
+                    <AccessibilityPreset
+                      title="Sala de TV"
+                      text="Fonte maxima e contraste para distancia."
+                      onClick={() => updatePreferences({ fontScale: 125, highContrast: true, readableText: true, comprehensionMode: true })}
+                    />
+                    <AccessibilityPreset
+                      title="Baixo movimento"
+                      text="Menos animacoes e leitura calma."
+                      onClick={() => updatePreferences({ reducedMotion: true, readableText: true, fontScale: 110 })}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="gradient-industrial glow-card border-primary/20">
+                <CardHeader className="border-b border-border/70 p-5">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Preview acessivel</p>
+                  <CardTitle className="mt-1 text-xl text-foreground">Como o sistema fica para o usuario</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4 p-5">
+                  <div className="rounded-lg border border-primary/25 bg-primary/10 p-4">
+                    <p className="text-sm font-semibold text-foreground">Resultado tecnico</p>
+                    <p className="mt-2 font-mono text-3xl font-semibold text-primary">160,104 m3/h</p>
+                    <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                      Capacidade estimada do elevador com base nos parametros preenchidos. Quando o modo didatico esta ativo,
+                      textos longos aparecem completos para reduzir erro de interpretacao.
+                    </p>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <Metric label="Fonte" value={`${preferences.fontScale}%`} />
+                    <Metric label="Contraste" value={preferences.highContrast ? "Alto" : "Padrao"} />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </TabsContent>
+
         <TabsContent value="preferencias" className="mt-0">
           <Card className="gradient-industrial glow-card border-border/60">
             <CardHeader className="border-b border-border/70 p-5">
@@ -289,6 +445,19 @@ export default function Configuracoes() {
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+function AccessibilityPreset({ title, text, onClick }: { title: string; text: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="rounded-lg border border-border/70 bg-background/35 p-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/35 hover:bg-muted/25"
+    >
+      <p className="break-normal font-semibold text-foreground">{title}</p>
+      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{text}</p>
+    </button>
   );
 }
 

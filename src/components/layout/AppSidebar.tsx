@@ -29,13 +29,13 @@ import {
 } from "@/components/ui/sidebar";
 
 const menuItems = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard },
-  { title: "Calculos", url: "/calculos", icon: Calculator },
-  { title: "Formulas", url: "/formulas", icon: FlaskConical },
+  { title: "Inicio", url: "/", icon: LayoutDashboard },
+  { title: "Calcular agora", url: "/calculos", icon: Calculator },
+  { title: "Biblioteca", url: "/formulas", icon: FlaskConical },
   { title: "Historico", url: "/historico", icon: History },
   { title: "Setores", url: "/setores", icon: Layers },
-  { title: "Projeto M90", url: "/mistura90-excel", icon: FileSpreadsheet },
-  { title: "Configuracoes", url: "/configuracoes", icon: Settings },
+  { title: "Projeto Mistura 90", url: "/mistura90-excel", icon: FileSpreadsheet },
+  { title: "Ajustes", url: "/configuracoes", icon: Settings },
 ];
 
 export function AppSidebar() {

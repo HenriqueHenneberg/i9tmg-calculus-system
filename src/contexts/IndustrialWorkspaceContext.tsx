@@ -16,6 +16,12 @@ export interface WorkspacePreferences {
   notifications: boolean;
   darkTheme: boolean;
   colorVisionMode: ColorVisionMode;
+  fontScale: number;
+  highContrast: boolean;
+  readableText: boolean;
+  reducedMotion: boolean;
+  strongFocus: boolean;
+  comprehensionMode: boolean;
   autoSaveHistory: boolean;
   defaultSector: SectorId;
   jobTitle: string;
@@ -68,6 +74,12 @@ const initialWorkspace: StoredWorkspace = {
     notifications: true,
     darkTheme: true,
     colorVisionMode: "standard",
+    fontScale: 100,
+    highContrast: false,
+    readableText: false,
+    reducedMotion: false,
+    strongFocus: true,
+    comprehensionMode: false,
     autoSaveHistory: true,
     defaultSector: "mecanica",
     jobTitle: "Engenharia Industrial",
@@ -94,10 +106,27 @@ export function IndustrialWorkspaceProvider({ children }: { children: ReactNode 
   }, [workspace]);
 
   useEffect(() => {
+    const fontScale = Math.min(125, Math.max(90, workspace.preferences.fontScale || 100));
     document.documentElement.dataset.compact = String(workspace.preferences.compactMode);
     document.documentElement.dataset.theme = workspace.preferences.darkTheme ? "dark" : "light";
     document.documentElement.dataset.colorVision = workspace.preferences.colorVisionMode;
-  }, [workspace.preferences.colorVisionMode, workspace.preferences.compactMode, workspace.preferences.darkTheme]);
+    document.documentElement.dataset.highContrast = String(workspace.preferences.highContrast);
+    document.documentElement.dataset.readableText = String(workspace.preferences.readableText);
+    document.documentElement.dataset.reducedMotion = String(workspace.preferences.reducedMotion);
+    document.documentElement.dataset.strongFocus = String(workspace.preferences.strongFocus);
+    document.documentElement.dataset.comprehensionMode = String(workspace.preferences.comprehensionMode);
+    document.documentElement.style.setProperty("--app-font-scale", String(fontScale / 100));
+  }, [
+    workspace.preferences.colorVisionMode,
+    workspace.preferences.compactMode,
+    workspace.preferences.comprehensionMode,
+    workspace.preferences.darkTheme,
+    workspace.preferences.fontScale,
+    workspace.preferences.highContrast,
+    workspace.preferences.readableText,
+    workspace.preferences.reducedMotion,
+    workspace.preferences.strongFocus,
+  ]);
 
   const formulas = useMemo(() => {
     const catalogWithOverrides = catalogFormulas.map((formula) => normalizeFormula(workspace.formulaOverrides[formula.id] || formula));
