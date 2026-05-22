@@ -1,5 +1,20 @@
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, ArrowRight, BookOpenCheck, Calculator, Flame, Search, SlidersHorizontal, Star, Zap, type LucideIcon } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowRight,
+  BookOpenCheck,
+  Brain,
+  Calculator,
+  CheckCircle2,
+  ClipboardCheck,
+  Flame,
+  Search,
+  ShieldAlert,
+  SlidersHorizontal,
+  Star,
+  Zap,
+  type LucideIcon,
+} from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { CalculationPanel } from "@/components/CalculationPanel";
@@ -17,6 +32,7 @@ import { useIndustrialWorkspace } from "@/contexts/IndustrialWorkspaceContext";
 import { evaluateFormula } from "@/lib/formula-engine";
 import { rankFormulas } from "@/lib/industrial-assistant";
 import type { Formula, Sector, SectorId } from "@/lib/industrial-data";
+import { getSectorVisual } from "@/lib/sector-visuals";
 
 export default function Calculos() {
   const { formulas, sectors, favoriteIds, isFavorite, toggleFavorite, recordCalculation, preferences } = useIndustrialWorkspace();
@@ -51,8 +67,12 @@ export default function Calculos() {
       setSelectedFormulaId(formulaId);
     }
 
-    if (sectorId && sectors.some((sector) => sector.id === sectorId)) {
+    if (sectorId) {
       setSelectedSector(sectorId);
+      if (!formulaId) {
+        const firstSectorFormula = getFirstFormulaForSector(formulas, sectorId);
+        if (firstSectorFormula) setSelectedFormulaId(firstSectorFormula.id);
+      }
     }
 
     if (encodedValues) {
@@ -66,7 +86,7 @@ export default function Calculos() {
         toast.error("Nao foi possivel recuperar os valores do historico.");
       }
     }
-  }, [formulas, sectors, searchParams]);
+  }, [formulas, searchParams]);
 
   const selectedFormula = formulas.find((formula) => formula.id === selectedFormulaId) || formulas[0];
 
@@ -103,6 +123,18 @@ export default function Calculos() {
     }).sort((a, b) => statusRank[b.status] - statusRank[a.status] || b.usageCount - a.usageCount);
   }, [formulas, search, selectedSector]);
 
+  useEffect(() => {
+    if (search.trim().length < 3 || filteredFormulas.length === 0) return;
+    const firstMatch = filteredFormulas[0];
+    if (firstMatch.id === selectedFormulaId) return;
+
+    setSelectedFormulaId(firstMatch.id);
+    setValues({});
+    setErrors({});
+    setResult(null);
+    setCalculationError(null);
+  }, [filteredFormulas, search, selectedFormulaId]);
+
   const favoriteFormulas = useMemo(
     () =>
       favoriteIds
@@ -115,6 +147,10 @@ export default function Calculos() {
   const mostUsed = useMemo(
     () => [...formulas].sort((a, b) => b.usageCount - a.usageCount).slice(0, 8),
     [formulas],
+  );
+  const auditItems = useMemo(
+    () => buildAuditItems(selectedFormula, values, errors, result),
+    [errors, result, selectedFormula, values],
   );
 
   const prioritySectors = useMemo(() => {
@@ -132,6 +168,16 @@ export default function Calculos() {
     setCalculationError(null);
   };
 
+  const selectSector = (sectorId: SectorId | "todos") => {
+    setSelectedSector(sectorId);
+    if (sectorId === "todos") return;
+
+    const firstSectorFormula = getFirstFormulaForSector(formulas, sectorId);
+    if (firstSectorFormula && firstSectorFormula.id !== selectedFormulaId) {
+      selectFormula(firstSectorFormula.id);
+    }
+  };
+
   const handleCalculate = () => {
     if (!selectedFormula) return;
     const nextErrors: Record<string, string> = {};
@@ -144,6 +190,10 @@ export default function Calculos() {
         nextErrors[variable.name] = "Campo obrigatorio";
       } else if (!Number.isFinite(parsed)) {
         nextErrors[variable.name] = "Valor invalido";
+      } else if (Math.abs(parsed) > 1_000_000_000) {
+        nextErrors[variable.name] = "Valor fora da faixa tecnica";
+      } else if (parsed === 0 && isLikelyDenominator(selectedFormula.expression, variable.name)) {
+        nextErrors[variable.name] = "Nao pode ser zero nesta formula";
       } else {
         normalizedValues[variable.name] = String(parsed);
       }
@@ -214,26 +264,27 @@ export default function Calculos() {
       <section className="rounded-lg border border-primary/25 bg-[linear-gradient(135deg,hsl(var(--card)),hsl(var(--surface-elevated))_58%,hsl(var(--primary)/0.12))] p-5 glow-card">
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
           <div className="min-w-0">
-            <Badge className="border-primary/25 bg-primary/15 text-primary hover:bg-primary/15">Calculadora central</Badge>
+            <Badge className="border-primary/25 bg-primary/15 text-primary hover:bg-primary/15">Assistente i9TMG</Badge>
             <h1 className="mt-3 text-balance text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
-              Faca a conta tecnica aqui
+              Calcule com fluxo guiado
             </h1>
             <p className="mt-3 max-w-3xl text-sm leading-relaxed text-muted-foreground md:text-base">
-              Escolha uma formula, digite os numeros e veja resultado, unidade e memoria de calculo na mesma tela.
-              A biblioteca ficou como apoio; o fluxo principal agora esta logo no primeiro bloco.
+              Busque a formula, preencha os valores, confira a auditoria tecnica e gere resultado com memoria de calculo.
+              A tela foi reorganizada para deixar a conta no centro da operacao.
             </p>
 
-            <div className="mt-5 grid gap-3 md:grid-cols-3">
-              <WorkflowHint index="1" title="Escolha" text="Use busca, setor ou formula mais usada." />
-              <WorkflowHint index="2" title="Preencha" text="Digite valores com unidade visivel." />
-              <WorkflowHint index="3" title="Calcule" text="Resultado grande e passo a passo." />
+            <div className="mt-5 grid gap-3 md:grid-cols-4">
+              <WorkflowHint index="1" title="Buscar" text="Digite problema, setor ou variavel." />
+              <WorkflowHint index="2" title="Preencher" text="Campos numericos com unidade." />
+              <WorkflowHint index="3" title="Auditar" text="O sistema checa risco e status." />
+              <WorkflowHint index="4" title="Calcular" text="Resultado, historico e relatorio." />
             </div>
           </div>
 
           <div className="rounded-lg border border-primary/25 bg-background/35 p-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Formula ativa</p>
-            <h2 className="mt-2 text-xl font-semibold text-foreground">{selectedFormula.name}</h2>
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{selectedFormula.simpleExplanation}</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Formula em operacao</p>
+              <h2 className="mt-2 text-xl font-semibold text-foreground">{selectedFormula.name}</h2>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{selectedFormula.simpleExplanation}</p>
             <div className="mt-4 technical-code text-sm">{selectedFormula.expression}</div>
             <div className="mt-4 flex flex-wrap gap-2">
               <Badge variant="outline" className="border-primary/25 bg-primary/10 text-primary">
@@ -256,7 +307,7 @@ export default function Calculos() {
           detail={`${formulas.length} formulas`}
           active={selectedSector === "todos"}
           icon={Calculator}
-          onClick={() => setSelectedSector("todos")}
+          onClick={() => selectSector("todos")}
         />
         {prioritySectors.map((sector) => (
           <SectorShortcut
@@ -265,7 +316,8 @@ export default function Calculos() {
             detail={`${sector.formulas} formulas`}
             active={selectedSector === sector.id}
             icon={sector.id === "eletrica" || sector.id === "energia" ? Zap : Calculator}
-            onClick={() => setSelectedSector(sector.id)}
+            sectorId={sector.id}
+            onClick={() => selectSector(sector.id)}
           />
         ))}
       </section>
@@ -285,16 +337,16 @@ export default function Calculos() {
               <Input
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                placeholder="Ex: corrente, motor, torque, vazao..."
+                placeholder="Digite o que precisa calcular..."
                 className="h-11 border-border bg-muted/25 pl-9 text-foreground focus-visible:ring-primary/40"
               />
             </div>
             <div className="mt-3 flex max-h-32 flex-wrap gap-2 overflow-auto pr-1">
-              <FilterButton active={selectedSector === "todos"} onClick={() => setSelectedSector("todos")}>
+              <FilterButton active={selectedSector === "todos"} onClick={() => selectSector("todos")}>
                 Todos
               </FilterButton>
               {sectors.map((sector) => (
-                <FilterButton key={sector.id} active={selectedSector === sector.id} onClick={() => setSelectedSector(sector.id)}>
+                <FilterButton key={sector.id} active={selectedSector === sector.id} onClick={() => selectSector(sector.id)}>
                   {sector.name}
                 </FilterButton>
               ))}
@@ -409,6 +461,7 @@ export default function Calculos() {
           </div>
 
           <div className="min-w-0 space-y-4">
+            <AuditPanel items={auditItems} formula={selectedFormula} />
             <StepByStepViewer formula={selectedFormula} values={values} result={result} />
             <Card className="gradient-industrial glow-card border-border/60">
               <CardHeader className="border-b border-border/70 p-4">
@@ -449,7 +502,7 @@ export default function Calculos() {
                 <button
                   key={sector.id}
                   type="button"
-                  onClick={() => setSelectedSector(sector.id)}
+                  onClick={() => selectSector(sector.id)}
                   className="rounded-lg border border-border/70 bg-background/35 p-4 text-left transition-all hover:-translate-y-0.5 hover:border-primary/35 hover:bg-muted/25"
                 >
                   <p className="font-semibold text-foreground">{sector.name}</p>
@@ -488,30 +541,102 @@ function WorkflowHint({ index, title, text }: { index: string; title: string; te
   );
 }
 
+type AuditState = "ok" | "warn" | "block" | "neutral";
+
+interface AuditItem {
+  title: string;
+  detail: string;
+  state: AuditState;
+  icon: LucideIcon;
+}
+
+function AuditPanel({ items, formula }: { items: AuditItem[]; formula: Formula }) {
+  const score = items.length ? Math.round((items.filter((item) => item.state === "ok").length / items.length) * 100) : 0;
+  const blocked = items.some((item) => item.state === "block");
+
+  return (
+    <Card className="gradient-industrial glow-card border-primary/25">
+      <CardHeader className="border-b border-border/70 p-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Auditoria tecnica</p>
+            <CardTitle className="mt-1 flex items-center gap-2 text-lg text-foreground">
+              <Brain className="h-5 w-5 text-primary" />
+              Checagem antes do calculo
+            </CardTitle>
+          </div>
+          <Badge
+            variant="outline"
+            className={blocked ? "border-warning/25 bg-warning/10 text-warning" : "border-success/25 bg-success/10 text-success"}
+          >
+            {blocked ? "Revisar entradas" : `${score}% pronto`}
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="grid gap-3 p-4">
+        {items.map((item) => {
+          const Icon = item.icon;
+          return (
+            <div key={item.title} className={`rounded-lg border p-3 ${auditClasses[item.state]}`}>
+              <div className="flex items-start gap-3">
+                <Icon className="mt-0.5 h-4 w-4 shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-foreground">{item.title}</p>
+                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{item.detail}</p>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+        <div className="rounded-lg border border-border/70 bg-muted/15 p-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Rastreabilidade</p>
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+            Ao calcular, o resultado entra no historico com usuario, setor, status da formula e entradas usadas. Versao da formula: {formula.version}
+          </p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 function SectorShortcut({
   title,
   detail,
   active,
   icon: Icon,
+  sectorId,
   onClick,
 }: {
   title: string;
   detail: string;
   active: boolean;
   icon: LucideIcon;
+  sectorId?: SectorId;
   onClick: () => void;
 }) {
+  const visual = sectorId ? getSectorVisual(sectorId) : null;
+
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-lg border p-4 text-left transition-all hover:-translate-y-0.5 ${
+      className={`group relative min-h-24 overflow-hidden rounded-lg border p-4 text-left transition-all hover:-translate-y-0.5 ${
         active ? "border-primary/45 bg-primary/15" : "border-border/70 bg-card/55 hover:border-primary/35 hover:bg-muted/25"
       }`}
     >
-      <Icon className="h-4 w-4 text-primary" />
-      <p className="mt-3 font-semibold text-foreground">{title}</p>
-      <p className="mt-1 text-xs text-muted-foreground">{detail}</p>
+      {visual && (
+        <span
+          className="absolute inset-0 scale-105 bg-cover bg-center opacity-20 blur-[1px] transition duration-300 group-hover:scale-110 group-hover:opacity-35"
+          style={{ backgroundImage: `url(${visual.image})`, backgroundPosition: visual.focus }}
+          aria-hidden="true"
+        />
+      )}
+      <span className="absolute inset-0 bg-[linear-gradient(135deg,hsl(var(--card)/0.92),hsl(var(--surface-elevated)/0.78))]" aria-hidden="true" />
+      <span className="relative block">
+        <Icon className="h-4 w-4 text-primary" />
+        <p className="mt-3 font-semibold text-foreground">{title}</p>
+        <p className="mt-1 text-xs text-muted-foreground">{detail}</p>
+      </span>
     </button>
   );
 }
@@ -538,3 +663,65 @@ function parseTechnicalNumber(value: string | undefined) {
   if (!/^-?\d+(\.\d+)?$/.test(normalized)) return Number.NaN;
   return Number(normalized);
 }
+
+function buildAuditItems(formula: Formula | undefined, values: Record<string, string>, errors: Record<string, string>, result: string | null): AuditItem[] {
+  if (!formula) return [];
+
+  const filledCount = formula.variables.filter((variable) => values[variable.name]?.trim()).length;
+  const invalidCount = Object.values(errors).filter(Boolean).length;
+  const zeroRisk = formula.variables.some((variable) => parseTechnicalNumber(values[variable.name]) === 0 && isLikelyDenominator(formula.expression, variable.name));
+  const largeValues = formula.variables.filter((variable) => {
+    const parsed = parseTechnicalNumber(values[variable.name]);
+    return Number.isFinite(parsed) && Math.abs(parsed) > 1_000_000;
+  }).length;
+
+  return [
+    {
+      title: "Entradas preenchidas",
+      detail: `${filledCount}/${formula.variables.length} variaveis informadas com valor numerico.`,
+      state: filledCount === formula.variables.length ? "ok" : "block",
+      icon: ClipboardCheck,
+    },
+    {
+      title: "Consistencia numerica",
+      detail: invalidCount ? `${invalidCount} campo(s) precisam de correcao antes de calcular.` : "Nenhum erro numerico detectado nos campos.",
+      state: invalidCount || zeroRisk ? "block" : largeValues ? "warn" : "ok",
+      icon: invalidCount || zeroRisk ? ShieldAlert : CheckCircle2,
+    },
+    {
+      title: "Status da formula",
+      detail: formula.status === "validada" || formula.status === "aprovada" ? "Formula liberada para uso operacional." : `Status atual: ${formula.status.replace("_", " ")}.`,
+      state: formula.status === "validada" || formula.status === "aprovada" ? "ok" : "warn",
+      icon: formula.status === "validada" || formula.status === "aprovada" ? CheckCircle2 : AlertTriangle,
+    },
+    {
+      title: "Saida tecnica",
+      detail: result ? `Resultado gerado em ${formula.resultUnit || "unidade nao definida"}.` : `Resultado previsto em ${formula.resultUnit || "unidade nao definida"}.`,
+      state: result ? "ok" : "neutral",
+      icon: Calculator,
+    },
+  ];
+}
+
+function getFirstFormulaForSector(formulas: Formula[], sectorId: SectorId) {
+  return formulas
+    .filter((formula) => formula.sectorId === sectorId && formula.status !== "arquivada")
+    .sort((a, b) => statusRank[b.status] - statusRank[a.status] || b.usageCount - a.usageCount)[0];
+}
+
+function isLikelyDenominator(expression: string, variableName: string) {
+  const body = expression.split("=").slice(1).join("=") || expression;
+  const name = escapeRegExp(variableName);
+  return new RegExp(`/\\s*(?:\\([^)]*\\b${name}\\b|\\b${name}\\b)`).test(body);
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+const auditClasses: Record<AuditState, string> = {
+  ok: "border-success/25 bg-success/10 text-success",
+  warn: "border-warning/25 bg-warning/10 text-warning",
+  block: "border-destructive/25 bg-destructive/10 text-destructive",
+  neutral: "border-border/70 bg-muted/15 text-muted-foreground",
+};

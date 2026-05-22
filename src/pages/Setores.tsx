@@ -46,6 +46,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useIndustrialWorkspace } from "@/contexts/IndustrialWorkspaceContext";
 import type { SectorId, UsageLevel } from "@/lib/industrial-data";
 import { adminOnlyMessage, canCreateSector } from "@/lib/permissions";
+import { getSectorVisual } from "@/lib/sector-visuals";
 
 const sectorIcons = {
   mecanica: Wrench,
@@ -82,6 +83,7 @@ export default function Setores() {
   });
 
   const activeSector = sectors.find((sector) => sector.id === selectedSector) || sectors[0];
+  const activeVisual = getSectorVisual(activeSector.id);
   const sectorFormulas = useMemo(
     () => formulas.filter((formula) => formula.sectorId === activeSector.id),
     [activeSector.id, formulas],
@@ -121,20 +123,28 @@ export default function Setores() {
 
   return (
     <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-6">
-      <section className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+      <section className="relative overflow-hidden rounded-lg border border-primary/25 bg-card/60 p-5 glow-card">
+        <div
+          className="absolute inset-0 scale-105 bg-cover bg-center opacity-20 blur-sm"
+          style={{ backgroundImage: `url(${activeVisual.image})`, backgroundPosition: activeVisual.focus }}
+          aria-hidden="true"
+        />
+        <div className="absolute inset-0 bg-[linear-gradient(135deg,hsl(var(--background)/0.96),hsl(var(--card)/0.86)_58%,hsl(var(--primary)/0.12))]" aria-hidden="true" />
+        <div className="relative flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <Badge className="border-primary/25 bg-primary/15 text-primary hover:bg-primary/15">Mapa operacional</Badge>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-foreground">Setores</h1>
+          <Badge className="border-primary/25 bg-primary/15 text-primary hover:bg-primary/15">Mapa operacional i9TMG</Badge>
+          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-foreground md:text-4xl">Escolha o setor e calcule</h1>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-            Organize calculos por area industrial e acompanhe volume, maturidade e formulas disponiveis.
+            Cada card abre direto as formulas daquele setor. Passe o mouse para ver a previa tecnica e clique para iniciar o calculo.
           </p>
         </div>
+        <div className="flex flex-col gap-3 sm:flex-row">
         <Button
           type="button"
           onClick={() => navigate(`/calculos?sector=${activeSector.id}`)}
           className="h-11 bg-primary text-primary-foreground glow-primary hover:bg-highlight-glow"
         >
-          Abrir console de calculos
+          Calcular em {activeSector.name}
         </Button>
         {admin && (
           <Button
@@ -146,23 +156,33 @@ export default function Setores() {
             Editar setor selecionado
           </Button>
         )}
+        </div>
+        </div>
       </section>
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {sectors.map((sector, index) => (
-          <div key={sector.id} onClick={() => setSelectedSector(sector.id)} className="cursor-pointer">
-            <SectorCard
-              sector={sector}
-              icon={sectorIcons[sector.id as keyof typeof sectorIcons] || Factory}
-              index={index}
-              onOpen={() => navigate(`/calculos?sector=${sector.id}`)}
-            />
-          </div>
+          <SectorCard
+            key={sector.id}
+            sector={sector}
+            selected={activeSector.id === sector.id}
+            icon={sectorIcons[sector.id as keyof typeof sectorIcons] || Factory}
+            index={index}
+            onPreview={() => setSelectedSector(sector.id)}
+            onOpen={() => navigate(`/calculos?sector=${sector.id}`)}
+          />
         ))}
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
-        <Card className="gradient-industrial glow-card border-border/60">
+        <Card className="relative overflow-hidden border-border/60 bg-card/70 glow-card">
+          <div
+            className="absolute inset-0 scale-105 bg-cover bg-center opacity-20 blur-sm"
+            style={{ backgroundImage: `url(${activeVisual.image})`, backgroundPosition: activeVisual.focus }}
+            aria-hidden="true"
+          />
+          <div className="absolute inset-0 bg-[linear-gradient(135deg,hsl(var(--card)/0.94),hsl(var(--surface-elevated)/0.82))]" aria-hidden="true" />
+          <div className="relative">
           <CardHeader className="border-b border-border/70 p-5">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Setor selecionado</p>
             <CardTitle className="mt-1 flex items-center gap-3 text-xl text-foreground">
@@ -188,6 +208,7 @@ export default function Setores() {
               <Progress value={activeSector.health} className="h-2 bg-muted" />
             </div>
           </CardContent>
+          </div>
         </Card>
 
         <Card className="gradient-industrial glow-card border-border/60">
