@@ -45,17 +45,21 @@ export function FormulaCard({ formula, selected, compact, favorite, onClick, chi
               <Badge variant="outline" className="border-primary/25 bg-primary/10 text-primary">
                 {formula.sector}
               </Badge>
-              <Badge variant="outline" className="border-border bg-muted/30 text-muted-foreground">
-                {formula.difficulty}
-              </Badge>
-              <Badge variant="outline" className="border-border bg-muted/30 text-muted-foreground">
-                {formula.usageCount} usos
-              </Badge>
+              {!compact && (
+                <>
+                  <Badge variant="outline" className="border-border bg-muted/30 text-muted-foreground">
+                    {formula.difficulty}
+                  </Badge>
+                  <Badge variant="outline" className="border-border bg-muted/30 text-muted-foreground">
+                    {formula.usageCount} usos
+                  </Badge>
+                </>
+              )}
               <Badge variant="outline" className={statusClasses[formula.status]}>
                 {statusLabels[formula.status]}
               </Badge>
             </div>
-            <div className={cn("mt-3 technical-code", compact && "line-clamp-2 py-1.5")}>{formula.expression}</div>
+            {(!compact || selected) && <div className={cn("mt-3 technical-code", compact && "line-clamp-2 py-1.5")}>{formula.expression}</div>}
             {!compact && formula.tags.length > 0 && (
               <div className="mt-3 flex flex-wrap gap-1.5">
                 {formula.tags.slice(0, 4).map((tag) => (

@@ -159,7 +159,7 @@ export function StepByStepViewer({ formula, values, result }: StepByStepViewerPr
       </CardHeader>
       <CardContent className="p-0">
         {!result ? (
-          <div className="flex min-h-[420px] items-center justify-center p-8 text-center">
+          <div className="flex min-h-[280px] items-center justify-center p-6 text-center">
             <div>
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-lg border border-border bg-muted/25 text-muted-foreground">
                 <Sigma className="h-6 w-6" />
@@ -171,7 +171,7 @@ export function StepByStepViewer({ formula, values, result }: StepByStepViewerPr
             </div>
           </div>
         ) : (
-          <ScrollArea className="h-[620px]">
+          <ScrollArea className="max-h-[560px]">
             <div className="space-y-4 p-5">
               <div className="rounded-lg border border-primary/25 bg-primary/10 p-5 text-center">
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Resultado</p>

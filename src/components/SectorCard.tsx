@@ -58,7 +58,7 @@ export function SectorCard({ sector, icon: Icon, index = 0, selected, onOpen, on
               <Icon className="h-6 w-6" />
             </span>
             <span className="min-w-0">
-              <span className="block text-lg font-semibold text-foreground">{sector.name}</span>
+              <span className="block text-base font-semibold leading-snug text-foreground">{sector.name}</span>
               <span className="mt-1 block text-xs text-muted-foreground">{visual.keyword}</span>
             </span>
           </span>

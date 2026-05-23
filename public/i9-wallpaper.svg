@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0d5f89"/>
+      <stop offset="0.5" stop-color="#0a4165"/>
+      <stop offset="1" stop-color="#08283f"/>
+    </linearGradient>
+    <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
+      <path d="M32 0H0v32" fill="none" stroke="#ffffff" stroke-opacity="0.035" stroke-width="1"/>
+    </pattern>
+    <g id="mark">
+      <circle cx="36" cy="25" r="20" fill="none" stroke="#043f5d" stroke-width="13"/>
+      <circle cx="10" cy="44" r="6" fill="#ff6a00"/>
+      <path d="M12 62h24L52 90H31z" fill="#043f5d"/>
+      <text x="28" y="112" fill="#043f5d" font-family="Inter, Arial, sans-serif" font-size="20" font-weight="800" transform="rotate(-10 28 112)">TMG</text>
+    </g>
+  </defs>
+
+  <rect width="640" height="360" fill="url(#bg)"/>
+  <rect width="640" height="360" fill="url(#grid)"/>
+  <g opacity="0.55" transform="rotate(-12 320 180)">
+    <use href="#mark" x="-10" y="-12" transform="scale(0.62)"/>
+    <use href="#mark" x="122" y="-24" transform="scale(0.62)"/>
+    <use href="#mark" x="254" y="-12" transform="scale(0.62)"/>
+    <use href="#mark" x="386" y="-24" transform="scale(0.62)"/>
+    <use href="#mark" x="518" y="-12" transform="scale(0.62)"/>
+
+    <use href="#mark" x="56" y="88" transform="scale(0.62)"/>
+    <use href="#mark" x="188" y="76" transform="scale(0.62)"/>
+    <use href="#mark" x="320" y="88" transform="scale(0.62)"/>
+    <use href="#mark" x="452" y="76" transform="scale(0.62)"/>
+    <use href="#mark" x="584" y="88" transform="scale(0.62)"/>
+
+    <use href="#mark" x="-10" y="188" transform="scale(0.62)"/>
+    <use href="#mark" x="122" y="176" transform="scale(0.62)"/>
+    <use href="#mark" x="254" y="188" transform="scale(0.62)"/>
+    <use href="#mark" x="386" y="176" transform="scale(0.62)"/>
+    <use href="#mark" x="518" y="188" transform="scale(0.62)"/>
+
+    <use href="#mark" x="56" y="288" transform="scale(0.62)"/>
+    <use href="#mark" x="188" y="276" transform="scale(0.62)"/>
+    <use href="#mark" x="320" y="288" transform="scale(0.62)"/>
+    <use href="#mark" x="452" y="276" transform="scale(0.62)"/>
+    <use href="#mark" x="584" y="288" transform="scale(0.62)"/>
+  </g>
+  <rect width="640" height="360" fill="#061a2a" opacity="0.18"/>
+</svg>

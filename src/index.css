@@ -261,6 +261,24 @@
     @apply transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/35 hover:bg-muted/30;
   }
 
+  .i9-wallpaper {
+    background-color: hsl(var(--background));
+    background-image:
+      radial-gradient(circle at top left, hsl(var(--primary) / 0.12), transparent 28rem),
+      linear-gradient(180deg, hsl(var(--background) / 0.94), hsl(var(--background) / 0.98)),
+      url("/i9-wallpaper.svg");
+    background-attachment: fixed, fixed, fixed;
+    background-position: top left, center, center;
+    background-size: auto, auto, 560px 315px;
+  }
+
+  :root[data-theme="light"] .i9-wallpaper {
+    background-image:
+      radial-gradient(circle at top left, hsl(var(--primary) / 0.1), transparent 26rem),
+      linear-gradient(180deg, hsl(var(--background) / 0.9), hsl(var(--background) / 0.96)),
+      url("/i9-wallpaper.svg");
+  }
+
   .technical-code {
     @apply max-w-full whitespace-normal break-words rounded-md border border-primary/20 bg-primary/10 px-3 py-2 font-mono text-xs leading-relaxed text-primary;
   }
