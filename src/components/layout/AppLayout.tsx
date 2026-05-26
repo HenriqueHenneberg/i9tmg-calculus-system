@@ -45,7 +45,7 @@ function AccessibilityBanner() {
         {preferences.comprehensionMode ? (
           <span className="inline-flex items-center gap-1 rounded-md border border-primary/25 bg-background/30 px-2 py-1 text-xs text-muted-foreground">
             <BookOpenCheck className="h-3.5 w-3.5 text-primary" />
-            Textos tecnicos aparecem com mais respiro e menos cortes.
+            Layout ajustado para leitura em tela grande.
           </span>
         ) : null}
       </div>

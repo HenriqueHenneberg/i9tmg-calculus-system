@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ArrowRight, BrainCircuit, CheckCircle2, SearchCheck, Sparkles, Wand2 } from "lucide-react";
+import { ArrowRight, BrainCircuit, CheckCircle2, SearchCheck, Wand2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -58,8 +58,8 @@ export function TechnicalAssistant({
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <Badge className="border-primary/30 bg-primary/15 text-primary hover:bg-primary/15">
-                <Sparkles className="h-3.5 w-3.5" />
-                IA local
+                <BrainCircuit className="h-3.5 w-3.5" />
+                Busca assistida
               </Badge>
               <Badge variant="outline" className="border-border bg-muted/25 text-muted-foreground">
                 sem API
@@ -67,7 +67,7 @@ export function TechnicalAssistant({
             </div>
             <CardTitle className="mt-3 flex items-center gap-2 text-xl text-foreground">
               <BrainCircuit className="h-5 w-5 text-primary" />
-              Assistente tecnico i9TMG
+              Leitor de pedido tecnico
             </CardTitle>
           </div>
           <div className="grid grid-cols-2 gap-2 text-center sm:grid-cols-3">
@@ -83,7 +83,7 @@ export function TechnicalAssistant({
           <Textarea
             value={prompt}
             onChange={(event) => setPrompt(event.target.value)}
-            placeholder="Descreva o calculo, equipamento ou valores. Ex: potencia motor H 18 D 0.42 v 1.2"
+            placeholder="Digite o problema ou cole valores. Ex: potencia motor H 18 D 0.42 v 1.2"
             className="min-h-[92px] resize-none border-border bg-muted/20 text-foreground transition-colors focus-visible:border-primary/50 focus-visible:ring-primary/40"
           />
 
@@ -141,7 +141,7 @@ export function TechnicalAssistant({
             </div>
 
             <div className="rounded-lg border border-border/70 bg-muted/15 p-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Proximos calculos</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Calculos relacionados</p>
               <div className="mt-3 flex flex-wrap gap-2">
                 {analysis.related.length > 0 ? (
                   analysis.related.map((formula) => (
@@ -163,7 +163,7 @@ export function TechnicalAssistant({
         </div>
 
         <div className="min-w-0 rounded-lg border border-border/70 bg-muted/15 p-3">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Sugestoes inteligentes</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Correspondencias da busca</p>
           <div className="mt-3 space-y-2">
             {analysis.suggestions.slice(0, 5).map((suggestion, index) => (
               <button

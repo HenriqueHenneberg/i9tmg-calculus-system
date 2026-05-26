@@ -35,6 +35,25 @@ const tooltipStyle = {
   boxShadow: "0 14px 40px hsl(210 60% 4% / 0.45)",
 };
 
+const sectorChartLabels: Record<string, string> = {
+  Mecanica: "Mec",
+  Eletrica: "Ele",
+  Hidraulica: "Hid",
+  Producao: "Prod",
+  Pneumatica: "Pneu",
+  Estrutural: "Estr",
+  Termodinamica: "Term",
+  Instrumentacao: "Instr",
+  Automacao: "Auto",
+  Manutencao: "Mant",
+  "Logistica industrial": "Log",
+  Qualidade: "Qual",
+  Planejamento: "Plan",
+  Energia: "Ener",
+  "Projeto Mistura 90": "M90",
+  "Elevadores Industriais": "Elev",
+};
+
 export default function Dashboard() {
   const navigate = useNavigate();
   const { userName, formulas, sectors, history, favoriteIds } = useIndustrialWorkspace();
@@ -223,7 +242,7 @@ export default function Dashboard() {
               ))
             ) : (
               <div className="rounded-lg border border-border/70 bg-muted/20 p-4 text-sm text-muted-foreground sm:col-span-2">
-                Favorite formulas no console de calculos para montar seu painel de trabalho.
+                Marque formulas com estrela na bancada para montar seus atalhos.
               </div>
             )}
           </CardContent>
@@ -231,15 +250,15 @@ export default function Dashboard() {
 
         <Card className="gradient-industrial glow-card border-primary/20">
           <CardHeader className="border-b border-border/70 p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">IA local</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Busca assistida</p>
             <CardTitle className="mt-1 flex items-center gap-2 text-lg text-foreground">
               <Sparkles className="h-5 w-5 text-primary" />
-              Assistente de calculos
+              Leitor de pedido tecnico
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 p-5">
             <p className="text-sm leading-relaxed text-muted-foreground">
-              Busque por necessidade tecnica, detecte valores escritos e preencha variaveis automaticamente sem depender de API externa.
+              Escreva o problema em linguagem direta, encontre a formula e preencha valores detectados sem API externa.
             </p>
             <Button type="button" onClick={() => navigate("/calculos")} className="w-full bg-primary text-primary-foreground hover:bg-highlight-glow">
               Abrir assistente
@@ -262,7 +281,14 @@ export default function Dashboard() {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={sectorUsage}>
                   <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
+                  <XAxis
+                    dataKey="name"
+                    axisLine={false}
+                    tickLine={false}
+                    interval={0}
+                    tickFormatter={(value) => sectorChartLabels[String(value)] || String(value).slice(0, 4)}
+                    tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                  />
                   <YAxis axisLine={false} tickLine={false} tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
                   <Tooltip cursor={{ fill: "hsl(var(--muted) / 0.25)" }} contentStyle={tooltipStyle} />
                   <Bar dataKey="calculos" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} />

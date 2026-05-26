@@ -276,13 +276,13 @@ export default function Calculos() {
           aria-hidden="true"
         />
         <div className="absolute inset-0 bg-[linear-gradient(90deg,hsl(var(--card)/0.92),hsl(var(--surface-elevated)/0.78),hsl(var(--primary)/0.14))]" aria-hidden="true" />
-        <div className="relative grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="relative grid gap-5 min-[1700px]:grid-cols-[minmax(0,1fr)_360px]">
           <div className="min-w-0">
             <h1 className="text-balance text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
               Bancada tecnica industrial
             </h1>
             <p className="mt-3 max-w-3xl text-sm leading-relaxed text-muted-foreground md:text-base">
-              Encontre a formula, confira as entradas e execute a memoria tecnica sem sair desta tela.
+              Escolha a formula, informe os valores e gere resultado com memoria de calculo na mesma tela.
             </p>
 
             <div className="mt-5 grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto]">
@@ -301,18 +301,18 @@ export default function Calculos() {
                 className="h-12 bg-primary px-6 text-primary-foreground glow-primary hover:bg-highlight-glow"
               >
                 <MousePointerClick className="h-4 w-4" />
-                Ir aos campos
+                Preencher valores
               </Button>
             </div>
 
             <div className="mt-5 grid gap-3 md:grid-cols-3">
-              <WorkflowHint index="1" title="Formula" text="Busca por equipamento, grandeza ou variavel." />
-              <WorkflowHint index="2" title="Entradas" text="Campos com unidade e validacao visual." />
-              <WorkflowHint index="3" title="Memoria" text="Resultado, auditoria e passo a passo juntos." />
+              <WorkflowHint index="1" title="Escolha" text="Busque por equipamento, grandeza ou variavel." />
+              <WorkflowHint index="2" title="Valores" text="Campos com unidade e validacao." />
+              <WorkflowHint index="3" title="Saida" text="Resultado, auditoria e passo a passo." />
             </div>
           </div>
 
-          <div className="hidden rounded-lg border border-primary/25 bg-background/40 p-4 xl:block">
+          <div className="hidden rounded-lg border border-primary/25 bg-background/40 p-4 min-[1700px]:block">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Em uso</p>
             <h2 className="mt-2 text-xl font-semibold text-foreground">{selectedFormula.name}</h2>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{selectedFormula.simpleExplanation}</p>
@@ -332,7 +332,7 @@ export default function Calculos() {
         </div>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_430px]">
+      <section className="grid gap-4 min-[1700px]:grid-cols-[minmax(0,1fr)_430px]">
         <div className="min-w-0 space-y-4">
           <CalculationPanel
             formula={selectedFormula}
@@ -379,13 +379,13 @@ export default function Calculos() {
           </div>
         </div>
 
-        <aside className="min-w-0 space-y-4 xl:sticky xl:top-24 xl:self-start">
+        <aside className="min-w-0 space-y-4 min-[1700px]:sticky min-[1700px]:top-24 min-[1700px]:self-start">
           <Card className="gradient-industrial glow-card border-border/60">
             <CardHeader className="border-b border-border/70 p-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Biblioteca</p>
-                  <CardTitle className="mt-1 text-lg text-foreground">Formulas tecnicas</CardTitle>
+                  <CardTitle className="mt-1 text-lg text-foreground">Escolher formula</CardTitle>
                 </div>
                 <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
               </div>
@@ -513,9 +513,9 @@ export default function Calculos() {
             <div className="flex items-start gap-3">
               <BookOpenCheck className="mt-0.5 h-5 w-5 text-primary" />
               <div>
-                <p className="font-semibold text-foreground">Fluxo de trabalho</p>
+                <p className="font-semibold text-foreground">Bancada fixa</p>
                 <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                  A biblioteca troca a formula em uso. Os campos, resultado e auditoria permanecem no painel principal.
+                  Ao trocar a formula, os campos e a auditoria seguem no painel principal.
                 </p>
               </div>
             </div>
@@ -529,7 +529,7 @@ export default function Calculos() {
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Atalho por setor</p>
             <h2 className="text-lg font-semibold text-foreground">Trocar contexto tecnico</h2>
           </div>
-          <p className="text-sm text-muted-foreground">Use quando quiser filtrar a biblioteca por area.</p>
+          <p className="text-sm text-muted-foreground">Clique em um setor para reduzir a lista de formulas.</p>
         </div>
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
           <SectorShortcut
@@ -562,9 +562,9 @@ export default function Calculos() {
                   <PanelTopOpen className="h-4 w-4" />
                 </span>
                 <span className="min-w-0">
-                  <span className="block font-semibold text-foreground">Apoio tecnico</span>
+                  <span className="block font-semibold text-foreground">Busca assistida</span>
                   <span className="mt-1 block text-sm font-normal text-muted-foreground">
-                    Sugestoes, valores detectados e guias ficam aqui quando voce precisar.
+                    Interprete textos curtos, preencha valores detectados e avance por formulas relacionadas.
                   </span>
                 </span>
               </span>

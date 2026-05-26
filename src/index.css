@@ -231,11 +231,16 @@
   h4,
   h5,
   h6,
-  span,
   td,
   th,
   code {
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
+    word-break: normal;
+  }
+
+  span {
+    overflow-wrap: normal;
+    word-break: normal;
   }
 
   ::-webkit-scrollbar {
@@ -297,7 +302,8 @@
   }
 
   .technical-code {
-    @apply max-w-full whitespace-normal break-words rounded-md border border-primary/20 bg-primary/10 px-3 py-2 font-mono text-xs leading-relaxed text-primary;
+    @apply max-w-full whitespace-normal rounded-md border border-primary/20 bg-primary/10 px-3 py-2 font-mono text-xs leading-relaxed text-primary;
+    overflow-wrap: anywhere;
   }
 }
 

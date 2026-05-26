@@ -39,7 +39,7 @@ export function CalculationPanel({
   return (
     <Card id="calculo-operacional" className="gradient-industrial glow-card flex min-w-0 scroll-mt-24 flex-col overflow-hidden border-primary/30">
       <CardHeader className="border-b border-border/70 p-4 sm:p-5">
-        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Em uso</p>
             <CardTitle className="mt-2 text-xl leading-snug text-foreground">{formula.name}</CardTitle>
@@ -55,7 +55,7 @@ export function CalculationPanel({
               </Badge>
             </div>
           </div>
-          <div className="flex min-w-0 flex-col gap-2 md:max-w-[320px]">
+          <div className="flex min-w-0 flex-col gap-2 lg:max-w-[340px]">
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Formula</p>
             <div className="technical-code mt-2 text-sm">
               {formula.expression}
@@ -94,9 +94,9 @@ export function CalculationPanel({
           <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Dados de entrada</p>
-              <p className="text-sm text-muted-foreground">Preencha os campos do equipamento. Use ponto ou virgula para decimais.</p>
+              <p className="text-sm text-muted-foreground">Informe os dados do equipamento. Use ponto ou virgula para decimais.</p>
             </div>
-            <div className="grid gap-2 sm:grid-cols-[150px_auto_auto] sm:items-center">
+            <div className="grid gap-2 lg:grid-cols-[150px_auto_auto] lg:items-center">
               <div className="min-w-0">
                 <div className="h-2 overflow-hidden rounded-full bg-muted/55">
                   <span className="block h-full rounded-full bg-primary transition-all" style={{ width: `${progress}%` }} />

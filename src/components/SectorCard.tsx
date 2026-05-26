@@ -60,7 +60,7 @@ export function SectorCard({ sector, icon: Icon, selected, onOpen, onPreview }: 
               <span className="mt-1 block text-xs text-muted-foreground">{visual.keyword}</span>
             </span>
           </span>
-          <span className="rounded-md border border-white/15 bg-background/35 px-2.5 py-1 font-mono text-sm text-foreground">
+          <span className="whitespace-nowrap rounded-md border border-white/15 bg-background/35 px-2.5 py-1 font-mono text-sm text-foreground">
             {sector.formulas}
           </span>
         </span>
