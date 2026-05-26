@@ -1,95 +1,121 @@
 import type { SectorId } from "@/lib/industrial-data";
 
 interface SectorVisual {
-  image: string;
+  fallbackImage: string;
+  localImages: string[];
   focus: string;
   keyword: string;
 }
 
+function userImages(baseName: string) {
+  return [
+    `/i9-user-images/${baseName}.jpg`,
+    `/i9-user-images/${baseName}.png`,
+    `/i9-user-images/${baseName}.webp`,
+  ];
+}
+
 const defaultVisual: SectorVisual = {
-  image: "https://images.unsplash.com/photo-1516937941344-00b4e0337589?auto=format&fit=crop&w=1200&q=70",
+  fallbackImage: "/i9-wallpaper.svg",
+  localImages: userImages("setor-industrial"),
   focus: "center",
   keyword: "Operacao industrial",
 };
 
 const visuals: Record<string, SectorVisual> = {
   mecanica: {
-    image: "https://images.unsplash.com/photo-1581092160562-40aa08e78837?auto=format&fit=crop&w=1200&q=70",
+    fallbackImage: "/i9-wallpaper.svg",
+    localImages: userImages("setor-mecanica"),
     focus: "center",
     keyword: "Conjuntos mecanicos",
   },
   eletrica: {
-    image: "https://images.unsplash.com/photo-1621905252507-b35492cc74b4?auto=format&fit=crop&w=1200&q=70",
+    fallbackImage: "/i9-wallpaper.svg",
+    localImages: userImages("setor-eletrica"),
     focus: "center",
     keyword: "Motores e paineis",
   },
   hidraulica: {
-    image: "https://images.unsplash.com/photo-1581093806997-124204d9fa9d?auto=format&fit=crop&w=1200&q=70",
+    fallbackImage: "/i9-wallpaper.svg",
+    localImages: userImages("setor-hidraulica"),
     focus: "center",
     keyword: "Bombas e tubulacoes",
   },
   producao: {
-    image: "https://images.unsplash.com/photo-1565043589221-1a6fd9ae45c7?auto=format&fit=crop&w=1200&q=70",
+    fallbackImage: "/i9-wallpaper.svg",
+    localImages: userImages("setor-producao"),
     focus: "center",
     keyword: "Linha produtiva",
   },
   pneumatica: {
-    image: "https://images.unsplash.com/photo-1581092335878-2d9ff86ca2bf?auto=format&fit=crop&w=1200&q=70",
+    fallbackImage: "/i9-wallpaper.svg",
+    localImages: userImages("setor-pneumatica"),
     focus: "center",
     keyword: "Ar comprimido",
   },
   estrutural: {
-    image: "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?auto=format&fit=crop&w=1200&q=70",
+    fallbackImage: "/i9-wallpaper.svg",
+    localImages: userImages("setor-estrutural"),
     focus: "center",
     keyword: "Estruturas metalicas",
   },
   termodinamica: {
-    image: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1200&q=70",
+    fallbackImage: "/i9-wallpaper.svg",
+    localImages: userImages("setor-termodinamica"),
     focus: "center",
     keyword: "Processo termico",
   },
   instrumentacao: {
-    image: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1200&q=70",
+    fallbackImage: "/i9-wallpaper.svg",
+    localImages: userImages("setor-instrumentacao"),
     focus: "center",
     keyword: "Sinais e sensores",
   },
   automacao: {
-    image: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1200&q=70",
+    fallbackImage: "/i9-wallpaper.svg",
+    localImages: userImages("setor-automacao"),
     focus: "center",
     keyword: "Controle industrial",
   },
   manutencao: {
-    image: "https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?auto=format&fit=crop&w=1200&q=70",
+    fallbackImage: "/i9-wallpaper.svg",
+    localImages: userImages("setor-manutencao"),
     focus: "center",
     keyword: "Confiabilidade",
   },
   logistica: {
-    image: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=1200&q=70",
+    fallbackImage: "/i9-wallpaper.svg",
+    localImages: userImages("setor-logistica"),
     focus: "center",
     keyword: "Fluxo e estoque",
   },
   qualidade: {
-    image: "https://images.unsplash.com/photo-1581093458791-9d42e65f7d63?auto=format&fit=crop&w=1200&q=70",
+    fallbackImage: "/i9-wallpaper.svg",
+    localImages: userImages("setor-qualidade"),
     focus: "center",
     keyword: "Inspecao tecnica",
   },
   planejamento: {
-    image: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=1200&q=70",
+    fallbackImage: "/i9-wallpaper.svg",
+    localImages: userImages("setor-planejamento"),
     focus: "center",
     keyword: "Plano e capacidade",
   },
   energia: {
-    image: "https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?auto=format&fit=crop&w=1200&q=70",
+    fallbackImage: "/i9-wallpaper.svg",
+    localImages: userImages("setor-energia"),
     focus: "center",
     keyword: "Energia e consumo",
   },
   equipamentos_mistura_90: {
-    image: "https://images.unsplash.com/photo-1516937941344-00b4e0337589?auto=format&fit=crop&w=1200&q=70",
+    fallbackImage: "/i9-wallpaper.svg",
+    localImages: userImages("setor-projeto-mistura-90"),
     focus: "center",
     keyword: "Projeto Mistura 90",
   },
   elevadores_mistura_90: {
-    image: "https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?auto=format&fit=crop&w=1200&q=70",
+    fallbackImage: "/i9-wallpaper.svg",
+    localImages: userImages("setor-elevadores-industriais"),
     focus: "center",
     keyword: "Elevadores industriais",
   },
@@ -97,4 +123,8 @@ const visuals: Record<string, SectorVisual> = {
 
 export function getSectorVisual(sectorId: SectorId): SectorVisual {
   return visuals[String(sectorId)] || defaultVisual;
+}
+
+export function getSectorBackgroundImage(visual: SectorVisual): string {
+  return [...visual.localImages, visual.fallbackImage].map((image) => `url("${image}")`).join(", ");
 }

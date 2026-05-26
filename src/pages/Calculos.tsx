@@ -36,7 +36,7 @@ import { useIndustrialWorkspace } from "@/contexts/IndustrialWorkspaceContext";
 import { evaluateFormula } from "@/lib/formula-engine";
 import { rankFormulas } from "@/lib/industrial-assistant";
 import type { Formula, Sector, SectorId } from "@/lib/industrial-data";
-import { getSectorVisual } from "@/lib/sector-visuals";
+import { getSectorBackgroundImage, getSectorVisual } from "@/lib/sector-visuals";
 
 export default function Calculos() {
   const { formulas, sectors, favoriteIds, isFavorite, toggleFavorite, recordCalculation, preferences } = useIndustrialWorkspace();
@@ -269,7 +269,10 @@ export default function Calculos() {
       <section className="relative overflow-hidden rounded-lg border border-primary/25 bg-card/90 p-4 glow-card sm:p-5">
         <div
           className="absolute inset-0 opacity-[0.28]"
-          style={{ backgroundImage: "url('/i9-panel-texture.svg')", backgroundSize: "420px 280px" }}
+          style={{
+            backgroundImage: "url('/i9-user-images/textura-painel-i9.png'), url('/i9-panel-texture.svg')",
+            backgroundSize: "420px 280px, 420px 280px",
+          }}
           aria-hidden="true"
         />
         <div className="absolute inset-0 bg-[linear-gradient(90deg,hsl(var(--card)/0.92),hsl(var(--surface-elevated)/0.78),hsl(var(--primary)/0.14))]" aria-hidden="true" />
@@ -718,7 +721,7 @@ function SectorShortcut({
       {visual && (
         <span
           className="absolute inset-0 scale-105 bg-cover bg-center opacity-30 blur-[1px] transition duration-300 group-hover:scale-110 group-hover:opacity-50"
-          style={{ backgroundImage: `url(${visual.image})`, backgroundPosition: visual.focus }}
+          style={{ backgroundImage: getSectorBackgroundImage(visual), backgroundPosition: visual.focus }}
           aria-hidden="true"
         />
       )}

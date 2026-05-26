@@ -3,7 +3,7 @@ import { ArrowRight, Calculator, Gauge } from "lucide-react";
 import { motion } from "framer-motion";
 import { Progress } from "@/components/ui/progress";
 import type { Sector } from "@/lib/industrial-data";
-import { getSectorVisual } from "@/lib/sector-visuals";
+import { getSectorBackgroundImage, getSectorVisual } from "@/lib/sector-visuals";
 
 interface SectorCardProps {
   sector: Sector;
@@ -34,7 +34,7 @@ export function SectorCard({ sector, icon: Icon, selected, onOpen, onPreview }: 
     >
       <span
         className="absolute inset-0 scale-105 bg-cover bg-center opacity-45 blur-[1px] transition duration-500 group-hover:scale-110 group-hover:opacity-65"
-        style={{ backgroundImage: `url(${visual.image})`, backgroundPosition: visual.focus }}
+        style={{ backgroundImage: getSectorBackgroundImage(visual), backgroundPosition: visual.focus }}
         aria-hidden="true"
       />
       <span

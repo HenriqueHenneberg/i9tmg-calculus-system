@@ -46,7 +46,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useIndustrialWorkspace } from "@/contexts/IndustrialWorkspaceContext";
 import type { SectorId, UsageLevel } from "@/lib/industrial-data";
 import { adminOnlyMessage, canCreateSector } from "@/lib/permissions";
-import { getSectorVisual } from "@/lib/sector-visuals";
+import { getSectorBackgroundImage, getSectorVisual } from "@/lib/sector-visuals";
 
 const sectorIcons = {
   mecanica: Wrench,
@@ -126,7 +126,7 @@ export default function Setores() {
       <section className="relative overflow-hidden rounded-lg border border-primary/25 bg-card/60 p-5 glow-card">
         <div
           className="absolute inset-0 scale-105 bg-cover bg-center opacity-20 blur-sm"
-          style={{ backgroundImage: `url(${activeVisual.image})`, backgroundPosition: activeVisual.focus }}
+          style={{ backgroundImage: getSectorBackgroundImage(activeVisual), backgroundPosition: activeVisual.focus }}
           aria-hidden="true"
         />
         <div className="absolute inset-0 bg-[linear-gradient(135deg,hsl(var(--background)/0.96),hsl(var(--card)/0.86)_58%,hsl(var(--primary)/0.12))]" aria-hidden="true" />
@@ -178,7 +178,7 @@ export default function Setores() {
         <Card className="relative overflow-hidden border-border/60 bg-card/70 glow-card">
           <div
             className="absolute inset-0 scale-105 bg-cover bg-center opacity-20 blur-sm"
-            style={{ backgroundImage: `url(${activeVisual.image})`, backgroundPosition: activeVisual.focus }}
+            style={{ backgroundImage: getSectorBackgroundImage(activeVisual), backgroundPosition: activeVisual.focus }}
             aria-hidden="true"
           />
           <div className="absolute inset-0 bg-[linear-gradient(135deg,hsl(var(--card)/0.94),hsl(var(--surface-elevated)/0.82))]" aria-hidden="true" />

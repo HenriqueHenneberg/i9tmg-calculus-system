@@ -61,7 +61,14 @@ export default function Dashboard() {
 
   return (
     <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-6">
-      <section className="gradient-industrial flex flex-col gap-5 rounded-lg border border-primary/25 p-5 glow-card lg:flex-row lg:items-center lg:justify-between">
+      <section className="gradient-industrial relative overflow-hidden rounded-lg border border-primary/25 p-5 glow-card">
+        <div
+          className="absolute inset-0 bg-cover bg-center opacity-28"
+          style={{ backgroundImage: "url('/i9-user-images/banner-i9tmg.jpg')" }}
+          aria-hidden="true"
+        />
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,hsl(var(--card)/0.96),hsl(var(--card)/0.88)_48%,hsl(var(--card)/0.42))]" aria-hidden="true" />
+        <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <Badge className="border-primary/25 bg-primary/15 text-primary hover:bg-primary/15">i9TMG Industrial</Badge>
@@ -71,7 +78,7 @@ export default function Dashboard() {
           </div>
           <h1 className="mt-4 text-balance text-3xl font-semibold tracking-tight text-foreground md:text-4xl">Centro de calculo i9TMG</h1>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-            Ola, {userName}. Use este painel para entrar direto no calculo, acompanhar formulas validadas e acessar o projeto Mistura 90.
+            {userName}, aqui ficam os atalhos de bancada, a fila recente e o projeto Mistura 90.
           </p>
           <div className="mt-5 flex flex-col gap-3 sm:flex-row">
             <Button
@@ -106,6 +113,7 @@ export default function Dashboard() {
             <p className="font-mono text-2xl font-semibold text-success">{sectors.length}</p>
             <p className="text-xs text-muted-foreground">Setores</p>
           </div>
+        </div>
         </div>
       </section>
 

@@ -46,7 +46,7 @@ export function AppSidebar() {
   const visibleItems = isAdmin(role) ? [...menuItems, { title: "Admin", url: "/admin", icon: ShieldCheck }] : menuItems;
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar">
+    <Sidebar collapsible="icon" className="i9-sidebar-skin border-r border-sidebar-border bg-sidebar">
       <SidebarHeader className="border-b border-sidebar-border/80 p-4">
         <BrandLogo showWordmark={!collapsed} markClassName="h-9 w-9" />
       </SidebarHeader>
