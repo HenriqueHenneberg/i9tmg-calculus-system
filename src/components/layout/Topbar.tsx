@@ -54,8 +54,8 @@ export function Topbar() {
       <div className="flex min-w-0 items-center gap-3">
         <SidebarTrigger className="text-muted-foreground hover:bg-muted/50 hover:text-foreground md:hidden" />
         <div className="min-w-0">
-          <h2 className="truncate text-sm font-medium text-foreground">Sistema de Calculos Tecnicos</h2>
-          <p className="hidden text-[11px] text-muted-foreground sm:block">Painel industrial i9TMG</p>
+          <h2 className="truncate text-sm font-medium text-foreground">i9TMG Calculos Industriais</h2>
+          <p className="hidden text-[11px] text-muted-foreground sm:block">Engenharia e memoria tecnica</p>
         </div>
       </div>
 
@@ -66,7 +66,7 @@ export function Topbar() {
           className="hidden h-9 bg-primary px-3 text-xs font-semibold text-primary-foreground hover:bg-highlight-glow sm:inline-flex"
         >
           <Calculator className="h-4 w-4" />
-          Calcular
+          Calculos
         </Button>
 
         <form
@@ -311,7 +311,7 @@ export function Topbar() {
             <div className="mt-4 grid gap-2">
               <Button type="button" variant="outline" onClick={() => navigate("/calculos")} className="justify-start border-border bg-muted/25 text-foreground">
                 <Calculator className="h-4 w-4" />
-                Abrir calculos
+                Bancada
               </Button>
               <Button
                 type="button"

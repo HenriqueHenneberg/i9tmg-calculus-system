@@ -1,47 +1,37 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360">
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#0d5f89"/>
-      <stop offset="0.5" stop-color="#0a4165"/>
-      <stop offset="1" stop-color="#08283f"/>
+      <stop offset="0" stop-color="#1ba4df"/>
+      <stop offset="0.45" stop-color="#1187c4"/>
+      <stop offset="1" stop-color="#09618e"/>
     </linearGradient>
-    <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
-      <path d="M32 0H0v32" fill="none" stroke="#ffffff" stroke-opacity="0.035" stroke-width="1"/>
-    </pattern>
+    <radialGradient id="light" cx="48%" cy="30%" r="72%">
+      <stop offset="0" stop-color="#58c3ef" stop-opacity="0.35"/>
+      <stop offset="0.58" stop-color="#1597d1" stop-opacity="0.08"/>
+      <stop offset="1" stop-color="#043a5a" stop-opacity="0.22"/>
+    </radialGradient>
+    <filter id="grain" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.95" numOctaves="3" seed="9"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feComponentTransfer>
+        <feFuncA type="table" tableValues="0 0.08"/>
+      </feComponentTransfer>
+    </filter>
     <g id="mark">
-      <circle cx="36" cy="25" r="20" fill="none" stroke="#043f5d" stroke-width="13"/>
-      <circle cx="10" cy="44" r="6" fill="#ff6a00"/>
-      <path d="M12 62h24L52 90H31z" fill="#043f5d"/>
-      <text x="28" y="112" fill="#043f5d" font-family="Inter, Arial, sans-serif" font-size="20" font-weight="800" transform="rotate(-10 28 112)">TMG</text>
+      <circle cx="56" cy="44" r="28" fill="none" stroke="#044565" stroke-width="18"/>
+      <circle cx="18" cy="70" r="8" fill="#ff6a00"/>
+      <path d="M19 92h35l24 42H48z" fill="#044565"/>
+      <text x="46" y="158" fill="#043f5d" font-family="Arial, sans-serif" font-size="22" font-weight="800" transform="rotate(-10 46 158)">TMG</text>
     </g>
+    <pattern id="logos" width="250" height="180" patternUnits="userSpaceOnUse" patternTransform="rotate(-12)">
+      <use href="#mark" x="18" y="-8" opacity="0.88"/>
+      <use href="#mark" x="144" y="88" opacity="0.88"/>
+    </pattern>
   </defs>
 
-  <rect width="640" height="360" fill="url(#bg)"/>
-  <rect width="640" height="360" fill="url(#grid)"/>
-  <g opacity="0.55" transform="rotate(-12 320 180)">
-    <use href="#mark" x="-10" y="-12" transform="scale(0.62)"/>
-    <use href="#mark" x="122" y="-24" transform="scale(0.62)"/>
-    <use href="#mark" x="254" y="-12" transform="scale(0.62)"/>
-    <use href="#mark" x="386" y="-24" transform="scale(0.62)"/>
-    <use href="#mark" x="518" y="-12" transform="scale(0.62)"/>
-
-    <use href="#mark" x="56" y="88" transform="scale(0.62)"/>
-    <use href="#mark" x="188" y="76" transform="scale(0.62)"/>
-    <use href="#mark" x="320" y="88" transform="scale(0.62)"/>
-    <use href="#mark" x="452" y="76" transform="scale(0.62)"/>
-    <use href="#mark" x="584" y="88" transform="scale(0.62)"/>
-
-    <use href="#mark" x="-10" y="188" transform="scale(0.62)"/>
-    <use href="#mark" x="122" y="176" transform="scale(0.62)"/>
-    <use href="#mark" x="254" y="188" transform="scale(0.62)"/>
-    <use href="#mark" x="386" y="176" transform="scale(0.62)"/>
-    <use href="#mark" x="518" y="188" transform="scale(0.62)"/>
-
-    <use href="#mark" x="56" y="288" transform="scale(0.62)"/>
-    <use href="#mark" x="188" y="276" transform="scale(0.62)"/>
-    <use href="#mark" x="320" y="288" transform="scale(0.62)"/>
-    <use href="#mark" x="452" y="276" transform="scale(0.62)"/>
-    <use href="#mark" x="584" y="288" transform="scale(0.62)"/>
-  </g>
-  <rect width="640" height="360" fill="#061a2a" opacity="0.18"/>
+  <rect width="1920" height="1080" fill="url(#bg)"/>
+  <rect width="1920" height="1080" fill="url(#light)"/>
+  <rect width="1920" height="1080" fill="url(#logos)" opacity="0.82"/>
+  <rect width="1920" height="1080" filter="url(#grain)" opacity="0.62"/>
+  <path d="M0 0h1920v1080H0z" fill="none" stroke="#ffffff" stroke-opacity="0.04" stroke-width="2"/>
 </svg>

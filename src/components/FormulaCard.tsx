@@ -18,7 +18,7 @@ export function FormulaCard({ formula, selected, compact, favorite, onClick, chi
   const content = (
     <Card
       className={cn(
-        "border-border/60 bg-card/70 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/35 hover:bg-muted/35 hover:shadow-[0_14px_40px_hsl(210_60%_4%/0.35)]",
+        "overflow-hidden border-border/60 bg-card/70 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/35 hover:bg-muted/35 hover:shadow-[0_14px_40px_hsl(210_60%_4%/0.35)]",
         selected && "border-primary/50 bg-primary/10 shadow-[0_0_0_1px_hsl(var(--primary)/0.25)]",
       )}
     >
@@ -34,7 +34,7 @@ export function FormulaCard({ formula, selected, compact, favorite, onClick, chi
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-start justify-between gap-3">
-              <p className="line-clamp-2 text-sm font-semibold leading-snug text-foreground">{formula.name}</p>
+              <p className="line-clamp-2 text-sm font-semibold leading-snug text-foreground text-wrap-safe">{formula.name}</p>
               <div className="flex shrink-0 items-center gap-2">
                 {favorite && <Star className="h-3.5 w-3.5 fill-primary text-primary" />}
                 {onClick && <ChevronRight className={cn("h-4 w-4 text-muted-foreground", selected && "text-primary")} />}

@@ -44,7 +44,8 @@ export default function Calculos() {
   const [searchParams] = useSearchParams();
   const [search, setSearch] = useState("");
   const [selectedSector, setSelectedSector] = useState<SectorId | "todos">("todos");
-  const [selectedFormulaId, setSelectedFormulaId] = useState(formulas[0]?.id || "");
+  const defaultFormulaId = getDefaultFormulaId(formulas);
+  const [selectedFormulaId, setSelectedFormulaId] = useState(defaultFormulaId);
   const [values, setValues] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [result, setResult] = useState<string | null>(null);
@@ -53,9 +54,9 @@ export default function Calculos() {
 
   useEffect(() => {
     if (!formulas.some((formula) => formula.id === selectedFormulaId)) {
-      setSelectedFormulaId(formulas[0]?.id || "");
+      setSelectedFormulaId(defaultFormulaId);
     }
-  }, [formulas, selectedFormulaId]);
+  }, [defaultFormulaId, formulas, selectedFormulaId]);
 
   useEffect(() => {
     const query = searchParams.get("q");
@@ -92,7 +93,7 @@ export default function Calculos() {
     }
   }, [formulas, searchParams]);
 
-  const selectedFormula = formulas.find((formula) => formula.id === selectedFormulaId) || formulas[0];
+  const selectedFormula = formulas.find((formula) => formula.id === selectedFormulaId) || formulas.find((formula) => formula.id === defaultFormulaId) || formulas[0];
 
   const filteredFormulas = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -267,18 +268,18 @@ export default function Calculos() {
     <div className="mx-auto flex w-full max-w-[1680px] flex-col gap-4">
       <section className="relative overflow-hidden rounded-lg border border-primary/25 bg-card/90 p-4 glow-card sm:p-5">
         <div
-          className="absolute inset-0 opacity-[0.16]"
-          style={{ backgroundImage: "url('/i9-wallpaper.svg')", backgroundSize: "520px 292px" }}
+          className="absolute inset-0 opacity-[0.28]"
+          style={{ backgroundImage: "url('/i9-panel-texture.svg')", backgroundSize: "420px 280px" }}
           aria-hidden="true"
         />
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,hsl(var(--card)/0.96),hsl(var(--surface-elevated)/0.84),hsl(var(--primary)/0.12))]" aria-hidden="true" />
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,hsl(var(--card)/0.92),hsl(var(--surface-elevated)/0.78),hsl(var(--primary)/0.14))]" aria-hidden="true" />
         <div className="relative grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
           <div className="min-w-0">
             <h1 className="text-balance text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
-              Escolha a formula. Preencha. Calcule.
+              Bancada tecnica industrial
             </h1>
             <p className="mt-3 max-w-3xl text-sm leading-relaxed text-muted-foreground md:text-base">
-              A conta agora fica no centro. Use a busca grande, selecione o setor se precisar e clique no botao laranja do painel principal.
+              Encontre a formula, confira as entradas e execute a memoria tecnica sem sair desta tela.
             </p>
 
             <div className="mt-5 grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto]">
@@ -297,19 +298,19 @@ export default function Calculos() {
                 className="h-12 bg-primary px-6 text-primary-foreground glow-primary hover:bg-highlight-glow"
               >
                 <MousePointerClick className="h-4 w-4" />
-                Calcular agora
+                Ir aos campos
               </Button>
             </div>
 
             <div className="mt-5 grid gap-3 md:grid-cols-3">
-              <WorkflowHint index="1" title="Formula" text="Busca seleciona a melhor opcao." />
-              <WorkflowHint index="2" title="Valores" text="Preencha so as entradas pedidas." />
-              <WorkflowHint index="3" title="Saida" text="Resultado, auditoria e relatorio." />
+              <WorkflowHint index="1" title="Formula" text="Busca por equipamento, grandeza ou variavel." />
+              <WorkflowHint index="2" title="Entradas" text="Campos com unidade e validacao visual." />
+              <WorkflowHint index="3" title="Memoria" text="Resultado, auditoria e passo a passo juntos." />
             </div>
           </div>
 
-          <div className="rounded-lg border border-primary/25 bg-background/40 p-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Conta em operacao</p>
+          <div className="hidden rounded-lg border border-primary/25 bg-background/40 p-4 xl:block">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Em uso</p>
             <h2 className="mt-2 text-xl font-semibold text-foreground">{selectedFormula.name}</h2>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{selectedFormula.simpleExplanation}</p>
             <div className="mt-4 technical-code text-sm">{selectedFormula.expression}</div>
@@ -326,27 +327,6 @@ export default function Calculos() {
             </div>
           </div>
         </div>
-      </section>
-
-      <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
-        <SectorShortcut
-          title="Todos"
-          detail={`${formulas.length} formulas`}
-          active={selectedSector === "todos"}
-          icon={Calculator}
-          onClick={() => selectSector("todos")}
-        />
-        {prioritySectors.map((sector) => (
-          <SectorShortcut
-            key={sector.id}
-            title={sector.name}
-            detail={`${sector.formulas} formulas`}
-            active={selectedSector === sector.id}
-            icon={sector.id === "eletrica" || sector.id === "energia" ? Zap : Calculator}
-            sectorId={sector.id}
-            onClick={() => selectSector(sector.id)}
-          />
-        ))}
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_430px]">
@@ -401,8 +381,8 @@ export default function Calculos() {
             <CardHeader className="border-b border-border/70 p-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Trocar formula</p>
-                  <CardTitle className="mt-1 text-lg text-foreground">Biblioteca enxuta</CardTitle>
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Biblioteca</p>
+                  <CardTitle className="mt-1 text-lg text-foreground">Formulas tecnicas</CardTitle>
                 </div>
                 <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
               </div>
@@ -422,7 +402,7 @@ export default function Calculos() {
                   <AccordionTrigger className="py-3 text-sm hover:no-underline">
                     <span className="flex items-center gap-2 text-foreground">
                       <Target className="h-4 w-4 text-primary" />
-                      Filtrar setores
+                      Setores
                     </span>
                   </AccordionTrigger>
                   <AccordionContent className="pb-4">
@@ -530,14 +510,44 @@ export default function Calculos() {
             <div className="flex items-start gap-3">
               <BookOpenCheck className="mt-0.5 h-5 w-5 text-primary" />
               <div>
-                <p className="font-semibold text-foreground">Caminho rapido</p>
+                <p className="font-semibold text-foreground">Fluxo de trabalho</p>
                 <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                  Biblioteca troca a formula. O painel grande executa. Auditoria e passo a passo ficam logo abaixo do resultado.
+                  A biblioteca troca a formula em uso. Os campos, resultado e auditoria permanecem no painel principal.
                 </p>
               </div>
             </div>
           </div>
         </aside>
+      </section>
+
+      <section className="rounded-lg border border-border/60 bg-card/70 p-4 glow-card">
+        <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Atalho por setor</p>
+            <h2 className="text-lg font-semibold text-foreground">Trocar contexto tecnico</h2>
+          </div>
+          <p className="text-sm text-muted-foreground">Use quando quiser filtrar a biblioteca por area.</p>
+        </div>
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
+          <SectorShortcut
+            title="Todos"
+            detail={`${formulas.length} formulas`}
+            active={selectedSector === "todos"}
+            icon={Calculator}
+            onClick={() => selectSector("todos")}
+          />
+          {prioritySectors.map((sector) => (
+            <SectorShortcut
+              key={sector.id}
+              title={sector.name}
+              detail={`${sector.formulas} formulas`}
+              active={selectedSector === sector.id}
+              icon={sector.id === "eletrica" || sector.id === "energia" ? Zap : Calculator}
+              sectorId={sector.id}
+              onClick={() => selectSector(sector.id)}
+            />
+          ))}
+        </div>
       </section>
 
       <section className="rounded-lg border border-border/60 bg-card/70 glow-card">
@@ -549,9 +559,9 @@ export default function Calculos() {
                   <PanelTopOpen className="h-4 w-4" />
                 </span>
                 <span className="min-w-0">
-                  <span className="block font-semibold text-foreground">Assistente local, guias e sugestoes</span>
+                  <span className="block font-semibold text-foreground">Apoio tecnico</span>
                   <span className="mt-1 block text-sm font-normal text-muted-foreground">
-                    Ferramentas extras ficam recolhidas para nao competir com a conta principal.
+                    Sugestoes, valores detectados e guias ficam aqui quando voce precisar.
                   </span>
                 </span>
               </span>
@@ -572,7 +582,7 @@ export default function Calculos() {
                   <Card className="gradient-industrial border-border/60">
                     <CardHeader className="border-b border-border/70 p-5">
                       <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Sugestao de uso</p>
-                      <CardTitle className="mt-1 text-lg text-foreground">Comece pelos setores principais</CardTitle>
+                      <CardTitle className="mt-1 text-lg text-foreground">Setores de referencia</CardTitle>
                     </CardHeader>
                     <CardContent className="grid gap-3 p-5 sm:grid-cols-2">
                       {prioritySectors.slice(0, 4).map((sector) => (
@@ -707,12 +717,12 @@ function SectorShortcut({
     >
       {visual && (
         <span
-          className="absolute inset-0 scale-105 bg-cover bg-center opacity-20 blur-[1px] transition duration-300 group-hover:scale-110 group-hover:opacity-35"
+          className="absolute inset-0 scale-105 bg-cover bg-center opacity-30 blur-[1px] transition duration-300 group-hover:scale-110 group-hover:opacity-50"
           style={{ backgroundImage: `url(${visual.image})`, backgroundPosition: visual.focus }}
           aria-hidden="true"
         />
       )}
-      <span className="absolute inset-0 bg-[linear-gradient(135deg,hsl(var(--card)/0.92),hsl(var(--surface-elevated)/0.78))]" aria-hidden="true" />
+      <span className="absolute inset-0 bg-[linear-gradient(135deg,hsl(var(--card)/0.86),hsl(var(--surface-elevated)/0.68))]" aria-hidden="true" />
       <span className="relative block">
         <Icon className="h-4 w-4 text-primary" />
         <p className="mt-3 font-semibold text-foreground">{title}</p>
@@ -788,6 +798,10 @@ function getFirstFormulaForSector(formulas: Formula[], sectorId: SectorId) {
   return formulas
     .filter((formula) => formula.sectorId === sectorId && formula.status !== "arquivada")
     .sort((a, b) => statusRank[b.status] - statusRank[a.status] || b.usageCount - a.usageCount)[0];
+}
+
+function getDefaultFormulaId(formulas: Formula[]) {
+  return formulas.find((formula) => formula.id === "eletrica-corrente-trifasica-motor")?.id || formulas[0]?.id || "";
 }
 
 function isLikelyDenominator(expression: string, variableName: string) {

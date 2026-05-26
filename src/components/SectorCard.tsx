@@ -14,19 +14,17 @@ interface SectorCardProps {
   onPreview?: () => void;
 }
 
-export function SectorCard({ sector, icon: Icon, index = 0, selected, onOpen, onPreview }: SectorCardProps) {
+export function SectorCard({ sector, icon: Icon, selected, onOpen, onPreview }: SectorCardProps) {
   const visual = getSectorVisual(sector.id);
 
   return (
     <motion.button
       type="button"
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.04 }}
+      whileTap={{ scale: 0.99 }}
       onClick={onOpen}
       onFocus={onPreview}
       onMouseEnter={onPreview}
-      aria-label={`Abrir calculos do setor ${sector.name}`}
+      aria-label={`Abrir setor ${sector.name}`}
       className={`group relative flex min-h-[310px] w-full overflow-hidden rounded-lg border text-left shadow-[0_16px_40px_hsl(210_60%_4%/0.35)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_22px_55px_hsl(210_70%_3%/0.55)] ${
         selected ? "border-primary/55 ring-1 ring-primary/35" : "border-border/65 hover:border-primary/40"
       }`}
@@ -35,16 +33,16 @@ export function SectorCard({ sector, icon: Icon, index = 0, selected, onOpen, on
       }}
     >
       <span
-        className="absolute inset-0 scale-105 bg-cover bg-center opacity-35 blur-[1.5px] transition duration-500 group-hover:scale-110 group-hover:opacity-50"
+        className="absolute inset-0 scale-105 bg-cover bg-center opacity-45 blur-[1px] transition duration-500 group-hover:scale-110 group-hover:opacity-65"
         style={{ backgroundImage: `url(${visual.image})`, backgroundPosition: visual.focus }}
         aria-hidden="true"
       />
       <span
-        className="absolute inset-0 bg-[linear-gradient(135deg,hsl(210_74%_10%/0.96),hsl(200_46%_15%/0.84)_55%,hsl(24_100%_50%/0.20))]"
+        className="absolute inset-0 bg-[linear-gradient(135deg,hsl(210_74%_10%/0.90),hsl(200_46%_15%/0.74)_55%,hsl(24_100%_50%/0.20))]"
         aria-hidden="true"
       />
       <span
-        className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-background/85 to-transparent"
+        className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-background/75 to-transparent"
         aria-hidden="true"
       />
 
@@ -58,7 +56,7 @@ export function SectorCard({ sector, icon: Icon, index = 0, selected, onOpen, on
               <Icon className="h-6 w-6" />
             </span>
             <span className="min-w-0">
-              <span className="block text-base font-semibold leading-snug text-foreground">{sector.name}</span>
+              <span className="block text-base font-semibold leading-snug text-foreground [overflow-wrap:normal] [word-break:normal]">{sector.name}</span>
               <span className="mt-1 block text-xs text-muted-foreground">{visual.keyword}</span>
             </span>
           </span>
@@ -95,7 +93,7 @@ export function SectorCard({ sector, icon: Icon, index = 0, selected, onOpen, on
         </span>
 
         <span className="mt-5 flex items-center justify-between rounded-lg border border-primary/25 bg-primary/10 px-3 py-2 text-sm font-semibold text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
-          Abrir calculos deste setor
+          Abrir setor
           <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
         </span>
       </span>

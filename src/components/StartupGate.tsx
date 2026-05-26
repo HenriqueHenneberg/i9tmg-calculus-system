@@ -13,8 +13,8 @@ export function StartupGate({ children }: { children: ReactNode }) {
 
   if (booting) {
     return (
-      <div className="flex min-h-screen items-center justify-center overflow-hidden bg-background p-6">
-        <div className="absolute inset-0 bg-[linear-gradient(135deg,#0A2540,#0d2f46_52%,#071827)]" />
+      <div className="i9-wallpaper flex min-h-screen items-center justify-center overflow-hidden bg-background p-6">
+        <div className="absolute inset-0 bg-[linear-gradient(135deg,hsl(var(--background)/0.48),hsl(var(--background)/0.78)_62%,hsl(var(--background)/0.9))]" />
         <motion.div
           initial={{ opacity: 0, y: 18, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}

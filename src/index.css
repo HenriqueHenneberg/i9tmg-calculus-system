@@ -264,19 +264,26 @@
   .i9-wallpaper {
     background-color: hsl(var(--background));
     background-image:
-      radial-gradient(circle at top left, hsl(var(--primary) / 0.12), transparent 28rem),
-      linear-gradient(180deg, hsl(var(--background) / 0.94), hsl(var(--background) / 0.98)),
+      radial-gradient(circle at 12% 0%, hsl(var(--primary) / 0.18), transparent 26rem),
+      linear-gradient(180deg, hsl(var(--background) / 0.54), hsl(var(--background) / 0.82)),
       url("/i9-wallpaper.svg");
     background-attachment: fixed, fixed, fixed;
     background-position: top left, center, center;
-    background-size: auto, auto, 560px 315px;
+    background-size: auto, auto, cover;
   }
 
   :root[data-theme="light"] .i9-wallpaper {
     background-image:
-      radial-gradient(circle at top left, hsl(var(--primary) / 0.1), transparent 26rem),
-      linear-gradient(180deg, hsl(var(--background) / 0.9), hsl(var(--background) / 0.96)),
+      radial-gradient(circle at top left, hsl(var(--primary) / 0.12), transparent 26rem),
+      linear-gradient(180deg, hsl(var(--background) / 0.66), hsl(var(--background) / 0.9)),
       url("/i9-wallpaper.svg");
+  }
+
+  .industrial-canvas {
+    background-image:
+      radial-gradient(circle at 82% 8%, hsl(var(--primary) / 0.08), transparent 22rem),
+      linear-gradient(180deg, hsl(var(--background) / 0.18), hsl(var(--background) / 0.56));
+    background-size: auto, auto;
   }
 
   .technical-code {
@@ -298,7 +305,12 @@
   }
 
   .gradient-industrial {
-    background: linear-gradient(135deg, hsl(var(--card)), hsl(var(--surface-elevated)));
+    background-color: hsl(var(--card));
+    background-image:
+      linear-gradient(135deg, hsl(var(--card) / 0.94), hsl(var(--surface-elevated) / 0.88)),
+      url("/i9-panel-texture.svg");
+    background-size: auto, 420px 280px;
+    background-blend-mode: normal, soft-light;
   }
 
   .border-glow {

@@ -193,7 +193,7 @@ export function StepByStepViewer({ formula, values, result }: StepByStepViewerPr
                 </div>
               </div>
 
-              <Step title="1. Formula selecionada" icon={ClipboardList}>
+              <Step title="1. Expressao tecnica" icon={ClipboardList}>
                 <p className="font-mono text-sm text-foreground">{steps[0]}</p>
               </Step>
 

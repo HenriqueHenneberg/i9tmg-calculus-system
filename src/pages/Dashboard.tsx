@@ -61,7 +61,7 @@ export default function Dashboard() {
 
   return (
     <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-6">
-      <section className="flex flex-col gap-5 rounded-lg border border-primary/25 bg-[linear-gradient(135deg,hsl(var(--card)),hsl(var(--surface-elevated))_58%,hsl(var(--primary)/0.10))] p-5 glow-card lg:flex-row lg:items-center lg:justify-between">
+      <section className="gradient-industrial flex flex-col gap-5 rounded-lg border border-primary/25 p-5 glow-card lg:flex-row lg:items-center lg:justify-between">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <Badge className="border-primary/25 bg-primary/15 text-primary hover:bg-primary/15">i9TMG Industrial</Badge>
@@ -80,7 +80,7 @@ export default function Dashboard() {
               className="h-11 bg-primary text-primary-foreground hover:bg-highlight-glow"
             >
               <Calculator className="h-4 w-4" />
-              Calcular agora
+              Bancada tecnica
             </Button>
             <Button
               type="button"
@@ -161,9 +161,9 @@ export default function Dashboard() {
       )}
 
       {equipamentosMistura90Sector && (
-        <section className="rounded-lg border border-primary/25 bg-[linear-gradient(135deg,hsl(var(--primary)/0.14),hsl(var(--muted)/0.16))] p-5 glow-card">
-          <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-            <div className="max-w-3xl">
+        <section className="gradient-industrial rounded-lg border border-primary/25 p-5 glow-card">
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(360px,430px)_auto] xl:items-center">
+            <div className="min-w-0">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Planilha tecnica convertida</p>
               <h2 className="mt-2 flex flex-wrap items-center gap-3 text-2xl font-semibold text-foreground">
                 <FileSpreadsheet className="h-6 w-6 text-primary" />
@@ -173,7 +173,7 @@ export default function Dashboard() {
                 {equipamentosMistura90Sector.description} Fonte: {mistura90Workbook.fileName}.
               </p>
             </div>
-            <div className="grid grid-cols-2 gap-3 text-center sm:grid-cols-4">
+            <div className="grid min-w-0 grid-cols-2 gap-3 text-center sm:grid-cols-4">
               <Metric label="Equipamentos" value={excelKpis.equipments} />
               <Metric label="Itens" value={excelKpis.reportItems} />
               <Metric label="Pendencias" value={excelKpis.pendingItems} />
@@ -182,7 +182,7 @@ export default function Dashboard() {
             <Button
               type="button"
               onClick={() => navigate("/mistura90-excel")}
-              className="h-11 shrink-0 bg-primary text-primary-foreground hover:bg-highlight-glow"
+              className="h-11 w-full shrink-0 bg-primary text-primary-foreground hover:bg-highlight-glow sm:w-auto"
             >
               <PackageCheck className="mr-2 h-4 w-4" />
               Abrir Projeto M90
@@ -408,9 +408,9 @@ export default function Dashboard() {
 
 function Metric({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-lg border border-border/70 bg-background/35 px-4 py-3">
-      <p className="font-mono text-2xl font-semibold text-foreground">{value}</p>
-      <p className="text-xs text-muted-foreground">{label}</p>
+    <div className="min-w-0 rounded-lg border border-border/70 bg-background/35 px-3 py-3 sm:px-4">
+      <p className="whitespace-nowrap font-mono text-2xl font-semibold text-foreground">{value}</p>
+      <p className="truncate text-xs text-muted-foreground">{label}</p>
     </div>
   );
 }

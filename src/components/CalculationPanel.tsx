@@ -41,7 +41,7 @@ export function CalculationPanel({
       <CardHeader className="border-b border-border/70 p-4 sm:p-5">
         <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
           <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Calculo ativo</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Em uso</p>
             <CardTitle className="mt-2 text-xl leading-snug text-foreground">{formula.name}</CardTitle>
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">{formula.description}</p>
             <div className="mt-3 flex flex-wrap gap-2">
@@ -56,7 +56,7 @@ export function CalculationPanel({
             </div>
           </div>
           <div className="flex min-w-0 flex-col gap-2 md:max-w-[320px]">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Expressao</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Formula</p>
             <div className="technical-code mt-2 text-sm">
               {formula.expression}
             </div>
@@ -85,31 +85,42 @@ export function CalculationPanel({
                   Exemplo
                 </Button>
               )}
-              <Button
-                type="button"
-                onClick={onCalculate}
-                disabled={loading}
-                className="col-span-2 h-10 bg-primary text-primary-foreground glow-primary hover:bg-highlight-glow"
-              >
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Calculator className="h-4 w-4" />}
-                Calcular agora
-              </Button>
             </div>
           </div>
         </div>
       </CardHeader>
       <CardContent className="flex flex-col p-4 sm:p-5">
         <div className="mb-4 rounded-lg border border-border/70 bg-background/30 p-3">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">1. Informe os valores</p>
-              <p className="text-sm text-muted-foreground">Use ponto ou virgula para decimais. O botao laranja calcula e salva no historico.</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Dados de entrada</p>
+              <p className="text-sm text-muted-foreground">Preencha os campos do equipamento. Use ponto ou virgula para decimais.</p>
             </div>
-            <div className="min-w-36">
-              <div className="h-2 overflow-hidden rounded-full bg-muted/55">
-                <span className="block h-full rounded-full bg-primary transition-all" style={{ width: `${progress}%` }} />
+            <div className="grid gap-2 sm:grid-cols-[150px_auto_auto] sm:items-center">
+              <div className="min-w-0">
+                <div className="h-2 overflow-hidden rounded-full bg-muted/55">
+                  <span className="block h-full rounded-full bg-primary transition-all" style={{ width: `${progress}%` }} />
+                </div>
+                <p className="mt-1 text-right text-xs text-muted-foreground">{progress}% preenchido</p>
               </div>
-              <p className="mt-1 text-right text-xs text-muted-foreground">{progress}% preenchido</p>
+              <Button
+                type="button"
+                onClick={onCalculate}
+                disabled={loading}
+                className="h-11 bg-primary px-5 text-primary-foreground glow-primary hover:bg-highlight-glow"
+              >
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Calculator className="h-4 w-4" />}
+                Executar calculo
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onReset}
+                className="h-11 border-border bg-background/35 px-4 text-foreground hover:bg-muted/50"
+              >
+                <RotateCcw className="h-4 w-4" />
+                Limpar
+              </Button>
             </div>
           </div>
         </div>
@@ -130,28 +141,17 @@ export function CalculationPanel({
         </div>
 
         <div className="mt-5 rounded-lg border border-primary/25 bg-primary/10 p-4">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">2. Resultado</p>
-              <p className="mt-1 text-sm text-muted-foreground">Clique em Calcular agora para gerar a memoria tecnica.</p>
+          <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(240px,320px)] lg:items-center">
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Resultado tecnico</p>
+              <p className="mt-1 text-sm text-muted-foreground">Saida numerica com memoria tecnica e registro no historico.</p>
             </div>
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              <div className="rounded-lg border border-primary/25 bg-background/35 px-4 py-3 text-left sm:min-w-56 sm:text-right">
-                <p className="font-mono text-3xl font-semibold text-primary">
-                  {result ?? "--"}
-                  {result ? <span className="ml-2 text-base text-muted-foreground">{formula.resultUnit}</span> : null}
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">{result ? "Calculado e pronto para historico" : "Aguardando entradas"}</p>
-              </div>
-              <Button
-                type="button"
-                onClick={onCalculate}
-                disabled={loading}
-                className="h-12 min-w-44 bg-primary text-primary-foreground glow-primary hover:bg-highlight-glow"
-              >
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Calculator className="h-4 w-4" />}
-                Calcular agora
-              </Button>
+            <div className="rounded-lg border border-primary/25 bg-background/35 px-4 py-3 text-left lg:text-right">
+              <p className="break-words font-mono text-3xl font-semibold text-primary">
+                {result ?? "--"}
+                {result ? <span className="ml-2 text-base text-muted-foreground">{formula.resultUnit}</span> : null}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">{result ? "Registrado no historico" : "Sem resultado ainda"}</p>
             </div>
           </div>
         </div>
@@ -161,27 +161,6 @@ export function CalculationPanel({
             <Lightbulb className="mt-0.5 h-4 w-4 text-primary" />
             <p className="text-sm leading-relaxed text-muted-foreground">{formula.simpleExplanation}</p>
           </div>
-        </div>
-
-        <div className="-mx-4 -mb-4 mt-5 flex flex-col gap-3 border-t border-border/70 bg-card/85 p-4 backdrop-blur sm:-mx-5 sm:-mb-5 sm:flex-row sm:p-5">
-          <Button
-            type="button"
-            onClick={onCalculate}
-            disabled={loading}
-            className="h-11 flex-1 bg-primary text-primary-foreground glow-primary hover:bg-highlight-glow"
-          >
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Calculator className="h-4 w-4" />}
-            Calcular agora
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onReset}
-            className="h-11 border-border bg-muted/25 text-foreground hover:bg-muted/50"
-          >
-            <RotateCcw className="h-4 w-4" />
-            Zerar campos
-          </Button>
         </div>
       </CardContent>
     </Card>

@@ -133,9 +133,9 @@ export default function Setores() {
         <div className="relative flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <Badge className="border-primary/25 bg-primary/15 text-primary hover:bg-primary/15">Mapa operacional i9TMG</Badge>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-foreground md:text-4xl">Escolha o setor e calcule</h1>
+          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-foreground md:text-4xl">Mapa de setores i9TMG</h1>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-            Cada card abre direto as formulas daquele setor. Passe o mouse para ver a previa tecnica e clique para iniciar o calculo.
+            Cada card abre a biblioteca daquele setor. Passe o mouse para ver a previa tecnica e entre no fluxo de trabalho.
           </p>
         </div>
         <div className="flex flex-col gap-3 sm:flex-row">
@@ -144,7 +144,7 @@ export default function Setores() {
           onClick={() => navigate(`/calculos?sector=${activeSector.id}`)}
           className="h-11 bg-primary text-primary-foreground glow-primary hover:bg-highlight-glow"
         >
-          Calcular em {activeSector.name}
+          Abrir {activeSector.name}
         </Button>
         {admin && (
           <Button

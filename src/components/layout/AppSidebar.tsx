@@ -30,7 +30,7 @@ import {
 
 const menuItems = [
   { title: "Inicio", url: "/", icon: LayoutDashboard },
-  { title: "Calcular agora", url: "/calculos", icon: Calculator },
+  { title: "Calculos", url: "/calculos", icon: Calculator },
   { title: "Biblioteca", url: "/formulas", icon: FlaskConical },
   { title: "Historico", url: "/historico", icon: History },
   { title: "Setores", url: "/setores", icon: Layers },
