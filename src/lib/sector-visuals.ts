@@ -12,6 +12,7 @@ function userImages(baseName: string) {
     `/i9-user-images/${baseName}.jpg`,
     `/i9-user-images/${baseName}.png`,
     `/i9-user-images/${baseName}.webp`,
+    `/i9-user-images/${baseName}.svg`,
   ];
 }
 
@@ -106,6 +107,66 @@ const visuals: Record<string, SectorVisual> = {
     localImages: userImages("setor-energia"),
     focus: "center",
     keyword: "Energia e consumo",
+  },
+  quimica: {
+    fallbackImage: "/i9-wallpaper.svg",
+    localImages: userImages("setor-quimica"),
+    focus: "center",
+    keyword: "Quimica industrial",
+  },
+  metalurgia: {
+    fallbackImage: "/i9-wallpaper.svg",
+    localImages: userImages("setor-metalurgia"),
+    focus: "center",
+    keyword: "Forno e laminacao",
+  },
+  alimentos_bebidas: {
+    fallbackImage: "/i9-wallpaper.svg",
+    localImages: userImages("setor-alimentos-bebidas"),
+    focus: "center",
+    keyword: "Linha de alimentos",
+  },
+  mineracao: {
+    fallbackImage: "/i9-wallpaper.svg",
+    localImages: userImages("setor-mineracao"),
+    focus: "center",
+    keyword: "Mineracao e correias",
+  },
+  papel_celulose: {
+    fallbackImage: "/i9-wallpaper.svg",
+    localImages: userImages("setor-papel-celulose"),
+    focus: "center",
+    keyword: "Papel e celulose",
+  },
+  saneamento: {
+    fallbackImage: "/i9-wallpaper.svg",
+    localImages: userImages("setor-saneamento"),
+    focus: "center",
+    keyword: "ETA e ETE",
+  },
+  seguranca_processos: {
+    fallbackImage: "/i9-wallpaper.svg",
+    localImages: userImages("setor-seguranca-processos"),
+    focus: "center",
+    keyword: "Seguranca de processos",
+  },
+  refrigeracao: {
+    fallbackImage: "/i9-wallpaper.svg",
+    localImages: userImages("setor-refrigeracao"),
+    focus: "center",
+    keyword: "Refrigeracao industrial",
+  },
+  embalagem: {
+    fallbackImage: "/i9-wallpaper.svg",
+    localImages: userImages("setor-embalagem"),
+    focus: "center",
+    keyword: "Embalagem e paletizacao",
+  },
+  utilidades: {
+    fallbackImage: "/i9-wallpaper.svg",
+    localImages: userImages("setor-utilidades"),
+    focus: "center",
+    keyword: "Utilidades industriais",
   },
   equipamentos_mistura_90: {
     fallbackImage: "/i9-wallpaper.svg",

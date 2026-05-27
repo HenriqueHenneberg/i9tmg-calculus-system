@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { motion } from "framer-motion";
 import {
   AlertTriangle,
   ArrowRight,
@@ -7,15 +8,15 @@ import {
   Calculator,
   CheckCircle2,
   ClipboardCheck,
-  Flame,
+  Factory,
+  Layers,
   MousePointerClick,
   PanelTopOpen,
   Search,
   ShieldAlert,
   SlidersHorizontal,
+  Sparkles,
   Star,
-  Target,
-  Zap,
   type LucideIcon,
 } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
@@ -51,6 +52,7 @@ export default function Calculos() {
   const [result, setResult] = useState<string | null>(null);
   const [calculationError, setCalculationError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [spotlightIndex, setSpotlightIndex] = useState(0);
 
   useEffect(() => {
     if (!formulas.some((formula) => formula.id === selectedFormulaId)) {
@@ -93,14 +95,14 @@ export default function Calculos() {
     }
   }, [formulas, searchParams]);
 
-  const selectedFormula = formulas.find((formula) => formula.id === selectedFormulaId) || formulas.find((formula) => formula.id === defaultFormulaId) || formulas[0];
+  const selectedFormula =
+    formulas.find((formula) => formula.id === selectedFormulaId) ||
+    formulas.find((formula) => formula.id === defaultFormulaId) ||
+    formulas[0];
 
   const filteredFormulas = useMemo(() => {
     const term = search.trim().toLowerCase();
-    const activeFormulas = formulas.filter((formula) => formula.status !== "arquivada").filter((formula) => {
-      const matchSector = selectedSector === "todos" || formula.sectorId === selectedSector;
-      return matchSector;
-    });
+    const activeFormulas = formulas.filter((formula) => formula.status !== "arquivada" && (selectedSector === "todos" || formula.sectorId === selectedSector));
 
     if (!term) {
       return [...activeFormulas].sort((a, b) => statusRank[b.status] - statusRank[a.status] || b.usageCount - a.usageCount);
@@ -112,20 +114,22 @@ export default function Calculos() {
     }
 
     const terms = term.split(/\s+/).filter(Boolean);
-    return activeFormulas.filter((formula) => {
-      const searchable = [
-        formula.name,
-        formula.sector,
-        formula.expression,
-        formula.description,
-        formula.simpleExplanation,
-        formula.tags.join(" "),
-        formula.variables.map((variable) => `${variable.name} ${variable.label}`).join(" "),
-      ]
-        .join(" ")
-        .toLowerCase();
-      return terms.some((searchTerm) => searchable.includes(searchTerm));
-    }).sort((a, b) => statusRank[b.status] - statusRank[a.status] || b.usageCount - a.usageCount);
+    return activeFormulas
+      .filter((formula) => {
+        const searchable = [
+          formula.name,
+          formula.sector,
+          formula.expression,
+          formula.description,
+          formula.simpleExplanation,
+          formula.tags.join(" "),
+          formula.variables.map((variable) => `${variable.name} ${variable.label}`).join(" "),
+        ]
+          .join(" ")
+          .toLowerCase();
+        return terms.some((searchTerm) => searchable.includes(searchTerm));
+      })
+      .sort((a, b) => statusRank[b.status] - statusRank[a.status] || b.usageCount - a.usageCount);
   }, [formulas, search, selectedSector]);
 
   useEffect(() => {
@@ -150,7 +154,7 @@ export default function Calculos() {
   );
 
   const mostUsed = useMemo(
-    () => [...formulas].sort((a, b) => b.usageCount - a.usageCount).slice(0, 8),
+    () => [...formulas].filter((formula) => formula.status !== "arquivada").sort((a, b) => b.usageCount - a.usageCount).slice(0, 8),
     [formulas],
   );
   const auditItems = useMemo(
@@ -158,12 +162,18 @@ export default function Calculos() {
     [errors, result, selectedFormula, values],
   );
 
-  const prioritySectors = useMemo(() => {
-    const ids: Array<SectorId | "todos"> = ["todos", "eletrica", "mecanica", "producao", "hidraulica", "elevadores_mistura_90"];
-    return ids
-      .map((id) => (id === "todos" ? null : sectors.find((sector) => sector.id === id)))
-      .filter((sector): sector is Sector => Boolean(sector));
-  }, [sectors]);
+  const spotlightFormulas = filteredFormulas.length > 0 ? filteredFormulas.slice(0, 5) : formulas.slice(0, 5);
+  const spotlightFormula = spotlightFormulas[spotlightIndex % Math.max(spotlightFormulas.length, 1)] || selectedFormula;
+  const selectedSectorName = selectedSector === "todos" ? "Todos os setores" : sectors.find((sector) => sector.id === selectedSector)?.name || "Setor";
+  const visibleFormulas = filteredFormulas.slice(0, 90);
+
+  useEffect(() => {
+    if (spotlightFormulas.length < 2) return;
+    const intervalId = window.setInterval(() => {
+      setSpotlightIndex((current) => current + 1);
+    }, 4200);
+    return () => window.clearInterval(intervalId);
+  }, [spotlightFormulas.length]);
 
   const selectFormula = (formulaId: string) => {
     setSelectedFormulaId(formulaId);
@@ -265,24 +275,30 @@ export default function Calculos() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-[1680px] flex-col gap-4">
-      <section className="relative overflow-hidden rounded-lg border border-primary/25 bg-card/90 p-4 glow-card sm:p-5">
+    <div className="mx-auto flex w-full max-w-[1740px] flex-col gap-5 overflow-x-hidden">
+      <section className="relative overflow-hidden rounded-lg border border-primary/25 bg-card/80 p-4 glow-card sm:p-5">
         <div
-          className="absolute inset-0 opacity-[0.28]"
-          style={{
-            backgroundImage: "url('/i9-user-images/textura-painel-i9.png'), url('/i9-panel-texture.svg')",
-            backgroundSize: "420px 280px, 420px 280px",
-          }}
+          className="absolute inset-0 bg-cover bg-center opacity-[0.2]"
+          style={{ backgroundImage: "url('/i9-user-images/wallpaper-i9.png'), url('/i9-wallpaper.svg')" }}
           aria-hidden="true"
         />
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,hsl(var(--card)/0.92),hsl(var(--surface-elevated)/0.78),hsl(var(--primary)/0.14))]" aria-hidden="true" />
-        <div className="relative grid gap-5 min-[1700px]:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,hsl(var(--card)/0.97),hsl(var(--card)/0.9)_54%,hsl(var(--primary)/0.12))]" aria-hidden="true" />
+        <div className="relative grid gap-5 xl:grid-cols-[minmax(0,1fr)_410px]">
           <div className="min-w-0">
-            <h1 className="text-balance text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
-              Bancada tecnica industrial
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge className="border-primary/25 bg-primary/15 text-primary hover:bg-primary/15">Bancada de calculo</Badge>
+              <Badge variant="outline" className="border-border bg-background/40 text-muted-foreground">
+                {formulas.length} formulas
+              </Badge>
+              <Badge variant="outline" className="border-border bg-background/40 text-muted-foreground">
+                {sectors.length} setores
+              </Badge>
+            </div>
+            <h1 className="mt-4 max-w-4xl text-balance text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
+              Escolha o setor, selecione a formula e preencha os valores
             </h1>
             <p className="mt-3 max-w-3xl text-sm leading-relaxed text-muted-foreground md:text-base">
-              Escolha a formula, informe os valores e gere resultado com memoria de calculo na mesma tela.
+              A pagina foi organizada como uma bancada: setor no topo, biblioteca de formulas na esquerda e entradas do calculo no painel principal.
             </p>
 
             <div className="mt-5 grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto]">
@@ -291,8 +307,8 @@ export default function Calculos() {
                 <Input
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
-                  placeholder="O que voce quer calcular? Ex: corrente motor, torque, vazao, OEE..."
-                  className="h-12 border-primary/25 bg-background/55 pl-9 text-foreground shadow-inner focus-visible:ring-primary/40"
+                  placeholder="Buscar por problema, equipamento, variavel ou setor"
+                  className="h-12 border-primary/25 bg-background/65 pl-9 text-foreground shadow-inner focus-visible:ring-primary/40"
                 />
               </div>
               <Button
@@ -305,35 +321,49 @@ export default function Calculos() {
               </Button>
             </div>
 
-            <div className="mt-5 grid gap-3 md:grid-cols-3">
-              <WorkflowHint index="1" title="Escolha" text="Busque por equipamento, grandeza ou variavel." />
-              <WorkflowHint index="2" title="Valores" text="Campos com unidade e validacao." />
-              <WorkflowHint index="3" title="Saida" text="Resultado, auditoria e passo a passo." />
+            <div className="mt-5 grid gap-3 md:grid-cols-4">
+              <StepChip index="1" title="Setor" text={selectedSectorName} icon={Factory} />
+              <StepChip index="2" title="Formula" text={selectedFormula.name} icon={Layers} />
+              <StepChip index="3" title="Entradas" text={`${selectedFormula.variables.length} campos`} icon={SlidersHorizontal} />
+              <StepChip index="4" title="Saida" text={selectedFormula.resultUnit || "resultado"} icon={Calculator} />
             </div>
           </div>
 
-          <div className="hidden rounded-lg border border-primary/25 bg-background/40 p-4 min-[1700px]:block">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Em uso</p>
-            <h2 className="mt-2 text-xl font-semibold text-foreground">{selectedFormula.name}</h2>
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{selectedFormula.simpleExplanation}</p>
-            <div className="mt-4 technical-code text-sm">{selectedFormula.expression}</div>
-            <div className="mt-4 flex flex-wrap gap-2">
-              <Badge variant="outline" className="border-primary/25 bg-primary/10 text-primary">
-                {selectedFormula.sector}
-              </Badge>
-              <Badge variant="outline" className="border-border bg-muted/25 text-muted-foreground">
-                {selectedFormula.variables.length} entradas
-              </Badge>
-              <Badge variant="outline" className="border-success/25 bg-success/10 text-success">
-                {selectedFormula.resultUnit || "sem unidade"}
-              </Badge>
-            </div>
-          </div>
+          <FormulaSpotlight formula={spotlightFormula} selected={spotlightFormula.id === selectedFormula.id} onSelect={() => selectFormula(spotlightFormula.id)} />
         </div>
       </section>
 
-      <section className="grid gap-4 min-[1700px]:grid-cols-[minmax(0,1fr)_430px]">
+      <SectorRail sectors={sectors} selectedSector={selectedSector} onSelect={selectSector} totalFormulas={formulas.length} />
+
+      <section className="grid gap-5 xl:grid-cols-[400px_minmax(0,1fr)]">
+        <FormulaFinderPanel
+          formulas={visibleFormulas}
+          total={filteredFormulas.length}
+          selectedFormula={selectedFormula}
+          selectedSectorName={selectedSectorName}
+          search={search}
+          onSearch={setSearch}
+          onSelectFormula={selectFormula}
+          favoriteFormulas={favoriteFormulas}
+          mostUsed={mostUsed}
+          isFavorite={isFavorite}
+        />
+
         <div className="min-w-0 space-y-4">
+          <div className="rounded-lg border border-primary/25 bg-primary/10 p-3">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Etapa 2</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Preencha os campos abaixo. O botao principal fica no rodape do painel de entradas.
+                </p>
+              </div>
+              <Badge variant="outline" className="w-fit border-primary/25 bg-background/45 text-primary">
+                {selectedFormula.status.replace("_", " ")}
+              </Badge>
+            </div>
+          </div>
+
           <CalculationPanel
             formula={selectedFormula}
             values={values}
@@ -373,183 +403,12 @@ export default function Calculos() {
             </div>
           )}
 
+          <FormulaTeachingReport formula={selectedFormula} result={result} />
+
           <div className="grid gap-4 2xl:grid-cols-2">
             <AuditPanel items={auditItems} formula={selectedFormula} />
             <StepByStepViewer formula={selectedFormula} values={values} result={result} />
           </div>
-        </div>
-
-        <aside className="min-w-0 space-y-4 min-[1700px]:sticky min-[1700px]:top-24 min-[1700px]:self-start">
-          <Card className="gradient-industrial glow-card border-border/60">
-            <CardHeader className="border-b border-border/70 p-4">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Biblioteca</p>
-                  <CardTitle className="mt-1 text-lg text-foreground">Escolher formula</CardTitle>
-                </div>
-                <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
-              </div>
-              <div className="relative mt-4">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  value={search}
-                  onChange={(event) => setSearch(event.target.value)}
-                  placeholder="Buscar por problema, formula ou variavel"
-                  className="h-11 border-border bg-muted/25 pl-9 text-foreground focus-visible:ring-primary/40"
-                />
-              </div>
-            </CardHeader>
-            <CardContent className="p-0">
-              <Accordion type="multiple" className="border-b border-border/70">
-                <AccordionItem value="setores" className="border-border/70 px-4">
-                  <AccordionTrigger className="py-3 text-sm hover:no-underline">
-                    <span className="flex items-center gap-2 text-foreground">
-                      <Target className="h-4 w-4 text-primary" />
-                      Setores
-                    </span>
-                  </AccordionTrigger>
-                  <AccordionContent className="pb-4">
-                    <div className="flex max-h-36 flex-wrap gap-2 overflow-auto pr-1">
-                      <FilterButton active={selectedSector === "todos"} onClick={() => selectSector("todos")}>
-                        Todos
-                      </FilterButton>
-                      {sectors.map((sector) => (
-                        <FilterButton key={sector.id} active={selectedSector === sector.id} onClick={() => selectSector(sector.id)}>
-                          {sector.name}
-                        </FilterButton>
-                      ))}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="favoritos" className="border-border/70 px-4">
-                  <AccordionTrigger className="py-3 text-sm hover:no-underline">
-                    <span className="flex items-center gap-2 text-foreground">
-                      <Star className="h-4 w-4 text-primary" />
-                      Favoritos
-                    </span>
-                  </AccordionTrigger>
-                  <AccordionContent className="pb-4">
-                    {favoriteFormulas.length > 0 ? (
-                      <div className="grid gap-2">
-                        {favoriteFormulas.map((formula) => (
-                          <Button
-                            key={formula.id}
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => selectFormula(formula.id)}
-                            className="justify-between border-border bg-background/30 text-left text-foreground hover:bg-muted/40"
-                          >
-                            <span className="truncate">{formula.name}</span>
-                            <ArrowRight className="h-3.5 w-3.5" />
-                          </Button>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="rounded-md border border-border/70 bg-muted/15 p-3 text-sm text-muted-foreground">
-                        Marque uma formula com estrela para ela aparecer aqui.
-                      </p>
-                    )}
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="usadas" className="border-0 px-4">
-                  <AccordionTrigger className="py-3 text-sm hover:no-underline">
-                    <span className="flex items-center gap-2 text-foreground">
-                      <Flame className="h-4 w-4 text-primary" />
-                      Mais usadas
-                    </span>
-                  </AccordionTrigger>
-                  <AccordionContent className="pb-4">
-                    <div className="flex flex-wrap gap-2">
-                      {mostUsed.map((formula) => (
-                        <button
-                          key={formula.id}
-                          type="button"
-                          onClick={() => selectFormula(formula.id)}
-                          className="rounded-md border border-border/70 bg-background/30 px-2 py-1 text-xs text-muted-foreground transition-colors hover:border-primary/35 hover:text-primary"
-                        >
-                          {formula.name}
-                        </button>
-                      ))}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
-
-              <div className="border-b border-border/70 px-4 py-3">
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-sm font-semibold text-foreground">{filteredFormulas.length} formulas encontradas</p>
-                  <Badge variant="outline" className="border-primary/25 bg-primary/10 text-primary">
-                    {selectedSector === "todos" ? "Todos" : sectors.find((sector) => sector.id === selectedSector)?.name}
-                  </Badge>
-                </div>
-              </div>
-
-              <ScrollArea className="h-[520px]">
-                <div className="space-y-3 p-4">
-                  {filteredFormulas.map((formula) => (
-                    <FormulaCard
-                      key={formula.id}
-                      formula={formula}
-                      selected={formula.id === selectedFormula.id}
-                      favorite={isFavorite(formula.id)}
-                      compact
-                      onClick={() => selectFormula(formula.id)}
-                    />
-                  ))}
-                  {filteredFormulas.length === 0 && (
-                    <div className="rounded-lg border border-border/70 bg-muted/20 p-5 text-center text-sm text-muted-foreground">
-                      Nenhuma formula encontrada. Tente buscar por setor, variavel ou equipamento.
-                    </div>
-                  )}
-                </div>
-              </ScrollArea>
-            </CardContent>
-          </Card>
-
-          <div className="rounded-lg border border-primary/20 bg-card/70 p-4 glow-card">
-            <div className="flex items-start gap-3">
-              <BookOpenCheck className="mt-0.5 h-5 w-5 text-primary" />
-              <div>
-                <p className="font-semibold text-foreground">Bancada fixa</p>
-                <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                  Ao trocar a formula, os campos e a auditoria seguem no painel principal.
-                </p>
-              </div>
-            </div>
-          </div>
-        </aside>
-      </section>
-
-      <section className="rounded-lg border border-border/60 bg-card/70 p-4 glow-card">
-        <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Atalho por setor</p>
-            <h2 className="text-lg font-semibold text-foreground">Trocar contexto tecnico</h2>
-          </div>
-          <p className="text-sm text-muted-foreground">Clique em um setor para reduzir a lista de formulas.</p>
-        </div>
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
-          <SectorShortcut
-            title="Todos"
-            detail={`${formulas.length} formulas`}
-            active={selectedSector === "todos"}
-            icon={Calculator}
-            onClick={() => selectSector("todos")}
-          />
-          {prioritySectors.map((sector) => (
-            <SectorShortcut
-              key={sector.id}
-              title={sector.name}
-              detail={`${sector.formulas} formulas`}
-              active={selectedSector === sector.id}
-              icon={sector.id === "eletrica" || sector.id === "energia" ? Zap : Calculator}
-              sectorId={sector.id}
-              onClick={() => selectSector(sector.id)}
-            />
-          ))}
         </div>
       </section>
 
@@ -562,9 +421,9 @@ export default function Calculos() {
                   <PanelTopOpen className="h-4 w-4" />
                 </span>
                 <span className="min-w-0">
-                  <span className="block font-semibold text-foreground">Busca assistida</span>
+                  <span className="block font-semibold text-foreground">Busca assistida e preenchimento por texto</span>
                   <span className="mt-1 block text-sm font-normal text-muted-foreground">
-                    Interprete textos curtos, preencha valores detectados e avance por formulas relacionadas.
+                    Cole uma anotacao de campo para detectar valores e formulas relacionadas.
                   </span>
                 </span>
               </span>
@@ -584,11 +443,11 @@ export default function Calculos() {
                 ) : (
                   <Card className="gradient-industrial border-border/60">
                     <CardHeader className="border-b border-border/70 p-5">
-                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Sugestao de uso</p>
-                      <CardTitle className="mt-1 text-lg text-foreground">Setores de referencia</CardTitle>
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Leitura tecnica</p>
+                      <CardTitle className="mt-1 text-lg text-foreground">Como orientar a busca</CardTitle>
                     </CardHeader>
                     <CardContent className="grid gap-3 p-5 sm:grid-cols-2">
-                      {prioritySectors.slice(0, 4).map((sector) => (
+                      {sectors.slice(0, 6).map((sector) => (
                         <button
                           key={sector.id}
                           type="button"
@@ -596,7 +455,7 @@ export default function Calculos() {
                           className="rounded-lg border border-border/70 bg-background/35 p-4 text-left transition-all hover:-translate-y-0.5 hover:border-primary/35 hover:bg-muted/25"
                         >
                           <p className="font-semibold text-foreground">{sector.name}</p>
-                          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{sector.description}</p>
+                          <p className="mt-2 text-sm leading-relaxed text-muted-foreground line-clamp-3">{sector.description}</p>
                         </button>
                       ))}
                     </CardContent>
@@ -619,19 +478,344 @@ const statusRank = {
   arquivada: 1,
 };
 
-function WorkflowHint({ index, title, text }: { index: string; title: string; text: string }) {
+function StepChip({ index, title, text, icon: Icon }: { index: string; title: string; text: string; icon: LucideIcon }) {
   return (
-    <div className="rounded-lg border border-border/70 bg-background/35 p-3">
-      <div className="flex items-center gap-3">
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/15 font-mono text-sm font-semibold text-primary">
+    <div className="min-w-0 rounded-lg border border-border/70 bg-background/40 p-3 transition-colors hover:border-primary/30 hover:bg-muted/25">
+      <div className="flex items-start gap-3">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-primary/25 bg-primary/15 font-mono text-sm font-semibold text-primary">
           {index}
         </span>
         <div className="min-w-0">
-          <p className="font-semibold text-foreground">{title}</p>
-          <p className="text-sm text-muted-foreground">{text}</p>
+          <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
+            <Icon className="h-4 w-4 text-primary" />
+            {title}
+          </p>
+          <p className="mt-1 truncate text-sm text-muted-foreground">{text}</p>
         </div>
       </div>
     </div>
+  );
+}
+
+function FormulaSpotlight({ formula, selected, onSelect }: { formula: Formula; selected: boolean; onSelect: () => void }) {
+  const visual = getSectorVisual(formula.sectorId);
+
+  return (
+    <motion.div
+      key={formula.id}
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35 }}
+      className="relative min-h-[260px] overflow-hidden rounded-lg border border-primary/25 bg-background/45 p-4"
+    >
+      <div
+        className="absolute inset-0 bg-cover bg-center opacity-30 transition-transform duration-700"
+        style={{ backgroundImage: getSectorBackgroundImage(visual), backgroundPosition: visual.focus }}
+        aria-hidden="true"
+      />
+      <div className="absolute inset-0 bg-[linear-gradient(140deg,hsl(var(--card)/0.95),hsl(var(--card)/0.82)_55%,hsl(var(--primary)/0.14))]" aria-hidden="true" />
+      <div className="relative flex h-full flex-col">
+        <div className="flex items-center justify-between gap-3">
+          <Badge className="border-primary/25 bg-primary/15 text-primary hover:bg-primary/15">
+            <Sparkles className="mr-1 h-3.5 w-3.5" />
+            Destaque
+          </Badge>
+          <Badge variant="outline" className="border-border bg-background/45 text-muted-foreground">
+            {formula.sector}
+          </Badge>
+        </div>
+        <h2 className="mt-5 text-2xl font-semibold leading-tight text-foreground">{formula.name}</h2>
+        <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-muted-foreground">{formula.simpleExplanation}</p>
+        <div className="mt-4 rounded-md border border-border/70 bg-background/45 p-3 technical-code text-sm">
+          {formula.expression}
+        </div>
+        <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-5">
+          <div className="flex flex-wrap gap-2">
+            <Badge variant="outline" className="border-border bg-muted/20 text-muted-foreground">
+              {formula.variables.length} entradas
+            </Badge>
+            <Badge variant="outline" className="border-success/25 bg-success/10 text-success">
+              {formula.resultUnit || "sem unidade"}
+            </Badge>
+          </div>
+          <Button type="button" onClick={onSelect} disabled={selected} className="bg-primary text-primary-foreground hover:bg-highlight-glow">
+            {selected ? "Selecionada" : "Usar formula"}
+            {!selected && <ArrowRight className="h-4 w-4" />}
+          </Button>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+function SectorRail({
+  sectors,
+  selectedSector,
+  onSelect,
+  totalFormulas,
+}: {
+  sectors: Sector[];
+  selectedSector: SectorId | "todos";
+  onSelect: (sectorId: SectorId | "todos") => void;
+  totalFormulas: number;
+}) {
+  return (
+    <section className="rounded-lg border border-border/60 bg-card/75 p-4 glow-card">
+      <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Setores</p>
+          <h2 className="text-lg font-semibold text-foreground">Filtre antes de procurar a formula</h2>
+        </div>
+        <p className="text-sm text-muted-foreground">O card inteiro e clicavel.</p>
+      </div>
+      <div className="flex gap-3 overflow-x-auto pb-2 pr-1 [scrollbar-width:thin]">
+        <SectorRailButton
+          title="Todos"
+          detail={`${totalFormulas} formulas`}
+          active={selectedSector === "todos"}
+          icon={Calculator}
+          onClick={() => onSelect("todos")}
+        />
+        {sectors.map((sector) => (
+          <SectorRailButton
+            key={sector.id}
+            title={sector.name}
+            detail={`${sector.formulas} formulas`}
+            active={selectedSector === sector.id}
+            sector={sector}
+            icon={Factory}
+            onClick={() => onSelect(sector.id)}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function SectorRailButton({
+  title,
+  detail,
+  active,
+  icon: Icon,
+  sector,
+  onClick,
+}: {
+  title: string;
+  detail: string;
+  active: boolean;
+  icon: LucideIcon;
+  sector?: Sector;
+  onClick: () => void;
+}) {
+  const visual = sector ? getSectorVisual(sector.id) : null;
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`group relative min-h-[118px] w-[190px] shrink-0 overflow-hidden rounded-lg border p-3 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg ${
+        active ? "border-primary/55 bg-primary/15 shadow-[0_0_0_1px_hsl(var(--primary)/0.25)]" : "border-border/70 bg-muted/20 hover:border-primary/35"
+      }`}
+    >
+      {visual && (
+        <span
+          className="absolute inset-0 scale-105 bg-cover bg-center opacity-38 transition duration-300 group-hover:scale-110 group-hover:opacity-55"
+          style={{ backgroundImage: getSectorBackgroundImage(visual), backgroundPosition: visual.focus }}
+          aria-hidden="true"
+        />
+      )}
+      <span className="absolute inset-0 bg-[linear-gradient(145deg,hsl(var(--card)/0.9),hsl(var(--surface-elevated)/0.72))]" aria-hidden="true" />
+      <span className="relative flex h-full flex-col">
+        <Icon className="h-4 w-4 text-primary" />
+        <span className="mt-auto block">
+          <span className="line-clamp-2 text-sm font-semibold leading-tight text-foreground">{title}</span>
+          <span className="mt-1 block text-xs text-muted-foreground">{detail}</span>
+        </span>
+      </span>
+    </button>
+  );
+}
+
+function FormulaFinderPanel({
+  formulas,
+  total,
+  selectedFormula,
+  selectedSectorName,
+  search,
+  onSearch,
+  onSelectFormula,
+  favoriteFormulas,
+  mostUsed,
+  isFavorite,
+}: {
+  formulas: Formula[];
+  total: number;
+  selectedFormula: Formula;
+  selectedSectorName: string;
+  search: string;
+  onSearch: (value: string) => void;
+  onSelectFormula: (formulaId: string) => void;
+  favoriteFormulas: Formula[];
+  mostUsed: Formula[];
+  isFavorite: (formulaId: string) => boolean;
+}) {
+  return (
+    <aside className="min-w-0 space-y-4 xl:sticky xl:top-24 xl:self-start">
+      <Card className="gradient-industrial glow-card border-border/60">
+        <CardHeader className="border-b border-border/70 p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Etapa 1</p>
+              <CardTitle className="mt-1 text-lg text-foreground">Escolha a formula</CardTitle>
+              <p className="mt-1 text-sm text-muted-foreground">{selectedSectorName}</p>
+            </div>
+            <SlidersHorizontal className="mt-1 h-4 w-4 text-muted-foreground" />
+          </div>
+          <div className="relative mt-4">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(event) => onSearch(event.target.value)}
+              placeholder="Ex: pH, correia, motor, vazao"
+              className="h-11 border-border bg-muted/25 pl-9 text-foreground focus-visible:ring-primary/40"
+            />
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          <Accordion type="single" collapsible className="border-b border-border/70">
+            <AccordionItem value="atalhos" className="border-0 px-4">
+              <AccordionTrigger className="py-3 text-sm hover:no-underline">
+                <span className="flex items-center gap-2 text-foreground">
+                  <Star className="h-4 w-4 text-primary" />
+                  Favoritos e mais usadas
+                </span>
+              </AccordionTrigger>
+              <AccordionContent className="pb-4">
+                <div className="space-y-4">
+                  <QuickFormulaList title="Favoritos" formulas={favoriteFormulas} empty="Nenhum favorito ainda." onSelectFormula={onSelectFormula} />
+                  <QuickFormulaList title="Mais usadas" formulas={mostUsed.slice(0, 6)} onSelectFormula={onSelectFormula} />
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+
+          <div className="border-b border-border/70 px-4 py-3">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm font-semibold text-foreground">{total} formulas encontradas</p>
+              <Badge variant="outline" className="border-primary/25 bg-primary/10 text-primary">
+                {total > formulas.length ? `mostrando ${formulas.length}` : "lista completa"}
+              </Badge>
+            </div>
+          </div>
+
+          <ScrollArea className="h-[690px]">
+            <div className="space-y-3 p-4">
+              {formulas.map((formula) => (
+                <FormulaCard
+                  key={formula.id}
+                  formula={formula}
+                  selected={formula.id === selectedFormula.id}
+                  favorite={isFavorite(formula.id)}
+                  compact
+                  onClick={() => onSelectFormula(formula.id)}
+                />
+              ))}
+              {formulas.length === 0 && (
+                <div className="rounded-lg border border-border/70 bg-muted/20 p-5 text-center text-sm text-muted-foreground">
+                  Nenhuma formula encontrada. Tente buscar por equipamento, grandeza ou variavel.
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+        </CardContent>
+      </Card>
+    </aside>
+  );
+}
+
+function QuickFormulaList({
+  title,
+  formulas,
+  empty,
+  onSelectFormula,
+}: {
+  title: string;
+  formulas: Formula[];
+  empty?: string;
+  onSelectFormula: (formulaId: string) => void;
+}) {
+  return (
+    <div>
+      <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">{title}</p>
+      {formulas.length > 0 ? (
+        <div className="flex flex-wrap gap-2">
+          {formulas.map((formula) => (
+            <button
+              key={formula.id}
+              type="button"
+              onClick={() => onSelectFormula(formula.id)}
+              className="rounded-md border border-border/70 bg-background/35 px-2.5 py-1.5 text-left text-xs text-muted-foreground transition-colors hover:border-primary/35 hover:text-primary"
+            >
+              {formula.name}
+            </button>
+          ))}
+        </div>
+      ) : (
+        <p className="rounded-md border border-border/70 bg-muted/15 p-3 text-sm text-muted-foreground">{empty || "Sem itens."}</p>
+      )}
+    </div>
+  );
+}
+
+function FormulaTeachingReport({ formula, result }: { formula: Formula; result: string | null }) {
+  return (
+    <Card className="gradient-industrial glow-card border-border/60">
+      <CardHeader className="border-b border-border/70 p-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Relatorio da formula</p>
+            <CardTitle className="mt-1 flex items-center gap-2 text-lg text-foreground">
+              <BookOpenCheck className="h-5 w-5 text-primary" />
+              {formula.name}
+            </CardTitle>
+          </div>
+          <Badge variant="outline" className="w-fit border-border bg-muted/20 text-muted-foreground">
+            v{formula.version} - {formula.resultUnit || "sem unidade"}
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="grid gap-4 p-4">
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
+          <div className="rounded-lg border border-border/70 bg-background/30 p-4">
+            <p className="text-sm font-semibold text-foreground">Para que serve</p>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{formula.description}</p>
+            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{formula.simpleExplanation}</p>
+          </div>
+          <div className="rounded-lg border border-primary/25 bg-primary/10 p-4">
+            <p className="text-sm font-semibold text-foreground">Resultado</p>
+            <p className="mt-2 font-mono text-2xl font-semibold text-primary">{result ? `${result} ${formula.resultUnit}` : `Aguardando ${formula.resultUnit || "calculo"}`}</p>
+            <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{formula.example}</p>
+          </div>
+        </div>
+
+        <div className="overflow-hidden rounded-lg border border-border/70">
+          <div className="grid grid-cols-[90px_minmax(0,1fr)_120px] border-b border-border/70 bg-muted/25 px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+            <span>Variavel</span>
+            <span>Significado</span>
+            <span>Unidade</span>
+          </div>
+          <div className="divide-y divide-border/70">
+            {formula.variables.map((variable) => (
+              <div key={variable.name} className="grid grid-cols-[90px_minmax(0,1fr)_120px] gap-3 px-3 py-2 text-sm">
+                <span className="break-all font-mono font-semibold text-primary">{variable.name}</span>
+                <span className="min-w-0 text-muted-foreground">{variable.label}</span>
+                <span className="text-muted-foreground">{variable.unit || "-"}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -690,64 +874,6 @@ function AuditPanel({ items, formula }: { items: AuditItem[]; formula: Formula }
         </div>
       </CardContent>
     </Card>
-  );
-}
-
-function SectorShortcut({
-  title,
-  detail,
-  active,
-  icon: Icon,
-  sectorId,
-  onClick,
-}: {
-  title: string;
-  detail: string;
-  active: boolean;
-  icon: LucideIcon;
-  sectorId?: SectorId;
-  onClick: () => void;
-}) {
-  const visual = sectorId ? getSectorVisual(sectorId) : null;
-
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`group relative min-h-24 overflow-hidden rounded-lg border p-4 text-left transition-all hover:-translate-y-0.5 ${
-        active ? "border-primary/45 bg-primary/15" : "border-border/70 bg-card/55 hover:border-primary/35 hover:bg-muted/25"
-      }`}
-    >
-      {visual && (
-        <span
-          className="absolute inset-0 scale-105 bg-cover bg-center opacity-30 blur-[1px] transition duration-300 group-hover:scale-110 group-hover:opacity-50"
-          style={{ backgroundImage: getSectorBackgroundImage(visual), backgroundPosition: visual.focus }}
-          aria-hidden="true"
-        />
-      )}
-      <span className="absolute inset-0 bg-[linear-gradient(135deg,hsl(var(--card)/0.86),hsl(var(--surface-elevated)/0.68))]" aria-hidden="true" />
-      <span className="relative block">
-        <Icon className="h-4 w-4 text-primary" />
-        <p className="mt-3 font-semibold text-foreground">{title}</p>
-        <p className="mt-1 text-xs text-muted-foreground">{detail}</p>
-      </span>
-    </button>
-  );
-}
-
-function FilterButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: string }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`rounded-md border px-2.5 py-1.5 text-xs transition-all ${
-        active
-          ? "border-primary/40 bg-primary/15 text-primary"
-          : "border-border/70 bg-muted/20 text-muted-foreground hover:border-primary/30 hover:text-foreground"
-      }`}
-    >
-      {children}
-    </button>
   );
 }
 

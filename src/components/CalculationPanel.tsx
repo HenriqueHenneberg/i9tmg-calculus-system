@@ -39,7 +39,7 @@ export function CalculationPanel({
   return (
     <Card id="calculo-operacional" className="gradient-industrial glow-card flex min-w-0 scroll-mt-24 flex-col overflow-hidden border-primary/30">
       <CardHeader className="border-b border-border/70 p-4 sm:p-5">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+        <div className="grid gap-4 2xl:grid-cols-[minmax(0,1fr)_minmax(280px,340px)] 2xl:items-start">
           <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Em uso</p>
             <CardTitle className="mt-2 text-xl leading-snug text-foreground">{formula.name}</CardTitle>
@@ -55,19 +55,19 @@ export function CalculationPanel({
               </Badge>
             </div>
           </div>
-          <div className="flex min-w-0 flex-col gap-2 lg:max-w-[340px]">
+          <div className="flex min-w-0 flex-col gap-2">
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Formula</p>
             <div className="technical-code mt-2 text-sm">
               {formula.expression}
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="flex flex-wrap gap-2">
               {onToggleFavorite && (
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
                   onClick={onToggleFavorite}
-                  className="flex-1 border-border bg-muted/25 text-foreground hover:bg-muted/50"
+                  className="min-w-[130px] flex-1 border-border bg-muted/25 text-foreground hover:bg-muted/50"
                 >
                   <Star className={favorite ? "h-4 w-4 fill-primary text-primary" : "h-4 w-4"} />
                   Favorito
@@ -79,7 +79,7 @@ export function CalculationPanel({
                   variant="outline"
                   size="sm"
                   onClick={onUseExample}
-                  className="flex-1 border-border bg-muted/25 text-foreground hover:bg-muted/50"
+                  className="min-w-[130px] flex-1 border-border bg-muted/25 text-foreground hover:bg-muted/50"
                 >
                   <Wand2 className="h-4 w-4" />
                   Exemplo
