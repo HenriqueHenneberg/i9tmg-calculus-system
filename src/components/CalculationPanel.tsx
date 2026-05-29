@@ -91,36 +91,44 @@ export function CalculationPanel({
       </CardHeader>
       <CardContent className="flex flex-col p-4 sm:p-5">
         <div className="mb-4 rounded-lg border border-border/70 bg-background/30 p-3">
-          <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(250px,320px)] xl:items-center">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Dados de entrada</p>
               <p className="text-sm text-muted-foreground">Informe os dados do equipamento. Use ponto ou virgula para decimais.</p>
-            </div>
-            <div className="grid gap-2 lg:grid-cols-[150px_auto_auto] lg:items-center">
-              <div className="min-w-0">
-                <div className="h-2 overflow-hidden rounded-full bg-muted/55">
-                  <span className="block h-full rounded-full bg-primary transition-all" style={{ width: `${progress}%` }} />
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <div className="min-w-[140px] flex-1">
+                  <div className="h-2 overflow-hidden rounded-full bg-muted/55">
+                    <span className="block h-full rounded-full bg-primary transition-all" style={{ width: `${progress}%` }} />
+                  </div>
+                  <p className="mt-1 text-right text-xs text-muted-foreground">{progress}% preenchido</p>
                 </div>
-                <p className="mt-1 text-right text-xs text-muted-foreground">{progress}% preenchido</p>
+                <Button
+                  type="button"
+                  onClick={onCalculate}
+                  disabled={loading}
+                  className="h-11 min-w-[170px] bg-primary px-5 text-primary-foreground glow-primary hover:bg-highlight-glow"
+                >
+                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Calculator className="h-4 w-4" />}
+                  Executar calculo
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={onReset}
+                  className="h-11 min-w-[100px] border-border bg-background/35 px-4 text-foreground hover:bg-muted/50"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                  Limpar
+                </Button>
               </div>
-              <Button
-                type="button"
-                onClick={onCalculate}
-                disabled={loading}
-                className="h-11 bg-primary px-5 text-primary-foreground glow-primary hover:bg-highlight-glow"
-              >
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Calculator className="h-4 w-4" />}
-                Executar calculo
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onReset}
-                className="h-11 border-border bg-background/35 px-4 text-foreground hover:bg-muted/50"
-              >
-                <RotateCcw className="h-4 w-4" />
-                Limpar
-              </Button>
+            </div>
+            <div className="rounded-lg border border-primary/25 bg-primary/10 px-4 py-3 text-left xl:text-right">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Resultado</p>
+              <p className="mt-1 break-words font-mono text-3xl font-semibold text-primary">
+                {result ?? "--"}
+                {result ? <span className="ml-2 text-base text-muted-foreground">{formula.resultUnit}</span> : null}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">{result ? "Registrado no historico" : formula.resultUnit || "aguardando calculo"}</p>
             </div>
           </div>
         </div>
@@ -138,22 +146,6 @@ export function CalculationPanel({
               onChange={(event) => onChange(variable.name, event.target.value)}
             />
           ))}
-        </div>
-
-        <div className="mt-5 rounded-lg border border-primary/25 bg-primary/10 p-4">
-          <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(240px,320px)] lg:items-center">
-            <div className="min-w-0">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Resultado tecnico</p>
-              <p className="mt-1 text-sm text-muted-foreground">Saida numerica com memoria tecnica e registro no historico.</p>
-            </div>
-            <div className="rounded-lg border border-primary/25 bg-background/35 px-4 py-3 text-left lg:text-right">
-              <p className="break-words font-mono text-3xl font-semibold text-primary">
-                {result ?? "--"}
-                {result ? <span className="ml-2 text-base text-muted-foreground">{formula.resultUnit}</span> : null}
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">{result ? "Registrado no historico" : "Sem resultado ainda"}</p>
-            </div>
-          </div>
         </div>
 
         <div className="mt-5 rounded-lg border border-border/70 bg-muted/15 p-4">

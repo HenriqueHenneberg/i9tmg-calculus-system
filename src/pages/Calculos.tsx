@@ -1,21 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
-import { motion } from "framer-motion";
 import {
   AlertTriangle,
-  ArrowRight,
   BookOpenCheck,
   Brain,
   Calculator,
   CheckCircle2,
   ClipboardCheck,
   Factory,
-  Layers,
-  MousePointerClick,
+  FileDown,
   PanelTopOpen,
   Search,
   ShieldAlert,
   SlidersHorizontal,
-  Sparkles,
   Star,
   type LucideIcon,
 } from "lucide-react";
@@ -44,7 +40,7 @@ export default function Calculos() {
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const [search, setSearch] = useState("");
-  const [selectedSector, setSelectedSector] = useState<SectorId | "todos">("todos");
+  const [selectedSector, setSelectedSector] = useState<SectorId>("eletrica");
   const defaultFormulaId = getDefaultFormulaId(formulas);
   const [selectedFormulaId, setSelectedFormulaId] = useState(defaultFormulaId);
   const [values, setValues] = useState<Record<string, string>>({});
@@ -52,7 +48,6 @@ export default function Calculos() {
   const [result, setResult] = useState<string | null>(null);
   const [calculationError, setCalculationError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [spotlightIndex, setSpotlightIndex] = useState(0);
 
   useEffect(() => {
     if (!formulas.some((formula) => formula.id === selectedFormulaId)) {
@@ -70,8 +65,10 @@ export default function Calculos() {
     const sectorId = searchParams.get("sector") as SectorId | null;
     const encodedValues = searchParams.get("values");
 
-    if (formulaId && formulas.some((formula) => formula.id === formulaId)) {
-      setSelectedFormulaId(formulaId);
+    const formulaFromUrl = formulaId ? formulas.find((formula) => formula.id === formulaId) : undefined;
+    if (formulaFromUrl) {
+      setSelectedFormulaId(formulaFromUrl.id);
+      if (!sectorId) setSelectedSector(formulaFromUrl.sectorId);
     }
 
     if (sectorId) {
@@ -102,7 +99,7 @@ export default function Calculos() {
 
   const filteredFormulas = useMemo(() => {
     const term = search.trim().toLowerCase();
-    const activeFormulas = formulas.filter((formula) => formula.status !== "arquivada" && (selectedSector === "todos" || formula.sectorId === selectedSector));
+    const activeFormulas = formulas.filter((formula) => formula.status !== "arquivada" && formula.sectorId === selectedSector);
 
     if (!term) {
       return [...activeFormulas].sort((a, b) => statusRank[b.status] - statusRank[a.status] || b.usageCount - a.usageCount);
@@ -162,18 +159,8 @@ export default function Calculos() {
     [errors, result, selectedFormula, values],
   );
 
-  const spotlightFormulas = filteredFormulas.length > 0 ? filteredFormulas.slice(0, 5) : formulas.slice(0, 5);
-  const spotlightFormula = spotlightFormulas[spotlightIndex % Math.max(spotlightFormulas.length, 1)] || selectedFormula;
-  const selectedSectorName = selectedSector === "todos" ? "Todos os setores" : sectors.find((sector) => sector.id === selectedSector)?.name || "Setor";
+  const selectedSectorName = sectors.find((sector) => sector.id === selectedSector)?.name || "Setor";
   const visibleFormulas = filteredFormulas.slice(0, 90);
-
-  useEffect(() => {
-    if (spotlightFormulas.length < 2) return;
-    const intervalId = window.setInterval(() => {
-      setSpotlightIndex((current) => current + 1);
-    }, 4200);
-    return () => window.clearInterval(intervalId);
-  }, [spotlightFormulas.length]);
 
   const selectFormula = (formulaId: string) => {
     setSelectedFormulaId(formulaId);
@@ -183,9 +170,8 @@ export default function Calculos() {
     setCalculationError(null);
   };
 
-  const selectSector = (sectorId: SectorId | "todos") => {
+  const selectSector = (sectorId: SectorId) => {
     setSelectedSector(sectorId);
-    if (sectorId === "todos") return;
 
     const firstSectorFormula = getFirstFormulaForSector(formulas, sectorId);
     if (firstSectorFormula && firstSectorFormula.id !== selectedFormulaId) {
@@ -275,67 +261,44 @@ export default function Calculos() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-[1740px] flex-col gap-5 overflow-x-hidden">
-      <section className="relative overflow-hidden rounded-lg border border-primary/25 bg-card/80 p-4 glow-card sm:p-5">
+    <div className="mx-auto flex w-full max-w-[1740px] flex-col gap-4 overflow-x-hidden">
+      <section className="relative overflow-hidden rounded-lg border border-primary/20 bg-card/82 p-3 glow-card sm:p-4">
         <div
-          className="absolute inset-0 bg-cover bg-center opacity-[0.2]"
+          className="absolute inset-0 bg-cover bg-center opacity-[0.16]"
           style={{ backgroundImage: "url('/i9-user-images/wallpaper-i9.png'), url('/i9-wallpaper.svg')" }}
           aria-hidden="true"
         />
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,hsl(var(--card)/0.97),hsl(var(--card)/0.9)_54%,hsl(var(--primary)/0.12))]" aria-hidden="true" />
-        <div className="relative grid gap-5 xl:grid-cols-[minmax(0,1fr)_410px]">
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge className="border-primary/25 bg-primary/15 text-primary hover:bg-primary/15">Bancada de calculo</Badge>
-              <Badge variant="outline" className="border-border bg-background/40 text-muted-foreground">
-                {formulas.length} formulas
-              </Badge>
-              <Badge variant="outline" className="border-border bg-background/40 text-muted-foreground">
-                {sectors.length} setores
-              </Badge>
-            </div>
-            <h1 className="mt-4 max-w-4xl text-balance text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
-              Escolha o setor, selecione a formula e preencha os valores
-            </h1>
-            <p className="mt-3 max-w-3xl text-sm leading-relaxed text-muted-foreground md:text-base">
-              A pagina foi organizada como uma bancada: setor no topo, biblioteca de formulas na esquerda e entradas do calculo no painel principal.
-            </p>
-
-            <div className="mt-5 grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto]">
-              <div className="relative">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-primary" />
-                <Input
-                  value={search}
-                  onChange={(event) => setSearch(event.target.value)}
-                  placeholder="Buscar por problema, equipamento, variavel ou setor"
-                  className="h-12 border-primary/25 bg-background/65 pl-9 text-foreground shadow-inner focus-visible:ring-primary/40"
-                />
-              </div>
-              <Button
-                type="button"
-                onClick={() => document.getElementById("calculo-operacional")?.scrollIntoView({ behavior: "smooth", block: "start" })}
-                className="h-12 bg-primary px-6 text-primary-foreground glow-primary hover:bg-highlight-glow"
-              >
-                <MousePointerClick className="h-4 w-4" />
-                Preencher valores
-              </Button>
-            </div>
-
-            <div className="mt-5 grid gap-3 md:grid-cols-4">
-              <StepChip index="1" title="Setor" text={selectedSectorName} icon={Factory} />
-              <StepChip index="2" title="Formula" text={selectedFormula.name} icon={Layers} />
-              <StepChip index="3" title="Entradas" text={`${selectedFormula.variables.length} campos`} icon={SlidersHorizontal} />
-              <StepChip index="4" title="Saida" text={selectedFormula.resultUnit || "resultado"} icon={Calculator} />
-            </div>
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,hsl(var(--card)/0.97),hsl(var(--card)/0.9)_62%,hsl(var(--primary)/0.1))]" aria-hidden="true" />
+        <div className="relative grid gap-3 xl:grid-cols-[220px_minmax(0,1fr)_auto] xl:items-center">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Calculos</p>
+            <h1 className="mt-1 text-2xl font-semibold tracking-tight text-foreground">Bancada tecnica</h1>
           </div>
 
-          <FormulaSpotlight formula={spotlightFormula} selected={spotlightFormula.id === selectedFormula.id} onSelect={() => selectFormula(spotlightFormula.id)} />
+          <div className="relative min-w-0">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-primary" />
+            <Input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder={`Buscar em ${selectedSectorName}`}
+              className="h-11 border-primary/25 bg-background/65 pl-9 text-foreground shadow-inner focus-visible:ring-primary/40"
+            />
+          </div>
+
+          <div className="flex flex-wrap gap-2 xl:justify-end">
+            <Badge variant="outline" className="border-primary/25 bg-primary/10 text-primary">
+              {selectedSectorName}
+            </Badge>
+            <Badge variant="outline" className="border-border bg-background/40 text-muted-foreground">
+              {filteredFormulas.length} formulas
+            </Badge>
+          </div>
         </div>
       </section>
 
-      <SectorRail sectors={sectors} selectedSector={selectedSector} onSelect={selectSector} totalFormulas={formulas.length} />
+      <SectorRail sectors={sectors} selectedSector={selectedSector} onSelect={selectSector} />
 
-      <section className="grid gap-5 xl:grid-cols-[400px_minmax(0,1fr)]">
+      <section className="grid gap-4 xl:grid-cols-[360px_minmax(0,1fr)]">
         <FormulaFinderPanel
           formulas={visibleFormulas}
           total={filteredFormulas.length}
@@ -350,20 +313,6 @@ export default function Calculos() {
         />
 
         <div className="min-w-0 space-y-4">
-          <div className="rounded-lg border border-primary/25 bg-primary/10 p-3">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <div className="min-w-0">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Etapa 2</p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Preencha os campos abaixo. O botao principal fica no rodape do painel de entradas.
-                </p>
-              </div>
-              <Badge variant="outline" className="w-fit border-primary/25 bg-background/45 text-primary">
-                {selectedFormula.status.replace("_", " ")}
-              </Badge>
-            </div>
-          </div>
-
           <CalculationPanel
             formula={selectedFormula}
             values={values}
@@ -403,12 +352,34 @@ export default function Calculos() {
             </div>
           )}
 
-          <FormulaTeachingReport formula={selectedFormula} result={result} />
+          <Accordion type="multiple" defaultValue={["relatorio"]} className="space-y-3">
+            <AccordionItem value="relatorio" className="overflow-hidden rounded-lg border border-border/60 bg-card/70 glow-card">
+              <AccordionTrigger className="px-4 py-3 text-left hover:no-underline">
+                <span className="flex items-center gap-2 font-semibold text-foreground">
+                  <BookOpenCheck className="h-4 w-4 text-primary" />
+                  Relatorio e explicacao
+                </span>
+              </AccordionTrigger>
+              <AccordionContent className="px-4 pb-4">
+                <FormulaTeachingReport formula={selectedFormula} result={result} />
+              </AccordionContent>
+            </AccordionItem>
 
-          <div className="grid gap-4 2xl:grid-cols-2">
-            <AuditPanel items={auditItems} formula={selectedFormula} />
-            <StepByStepViewer formula={selectedFormula} values={values} result={result} />
-          </div>
+            <AccordionItem value="auditoria" className="overflow-hidden rounded-lg border border-border/60 bg-card/70 glow-card">
+              <AccordionTrigger className="px-4 py-3 text-left hover:no-underline">
+                <span className="flex items-center gap-2 font-semibold text-foreground">
+                  <Brain className="h-4 w-4 text-primary" />
+                  Auditoria e passo a passo
+                </span>
+              </AccordionTrigger>
+              <AccordionContent className="px-4 pb-4">
+                <div className="grid gap-4 2xl:grid-cols-2">
+                  <AuditPanel items={auditItems} formula={selectedFormula} />
+                  <StepByStepViewer formula={selectedFormula} values={values} result={result} />
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </div>
       </section>
 
@@ -478,104 +449,18 @@ const statusRank = {
   arquivada: 1,
 };
 
-function StepChip({ index, title, text, icon: Icon }: { index: string; title: string; text: string; icon: LucideIcon }) {
-  return (
-    <div className="min-w-0 rounded-lg border border-border/70 bg-background/40 p-3 transition-colors hover:border-primary/30 hover:bg-muted/25">
-      <div className="flex items-start gap-3">
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-primary/25 bg-primary/15 font-mono text-sm font-semibold text-primary">
-          {index}
-        </span>
-        <div className="min-w-0">
-          <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
-            <Icon className="h-4 w-4 text-primary" />
-            {title}
-          </p>
-          <p className="mt-1 truncate text-sm text-muted-foreground">{text}</p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function FormulaSpotlight({ formula, selected, onSelect }: { formula: Formula; selected: boolean; onSelect: () => void }) {
-  const visual = getSectorVisual(formula.sectorId);
-
-  return (
-    <motion.div
-      key={formula.id}
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35 }}
-      className="relative min-h-[260px] overflow-hidden rounded-lg border border-primary/25 bg-background/45 p-4"
-    >
-      <div
-        className="absolute inset-0 bg-cover bg-center opacity-30 transition-transform duration-700"
-        style={{ backgroundImage: getSectorBackgroundImage(visual), backgroundPosition: visual.focus }}
-        aria-hidden="true"
-      />
-      <div className="absolute inset-0 bg-[linear-gradient(140deg,hsl(var(--card)/0.95),hsl(var(--card)/0.82)_55%,hsl(var(--primary)/0.14))]" aria-hidden="true" />
-      <div className="relative flex h-full flex-col">
-        <div className="flex items-center justify-between gap-3">
-          <Badge className="border-primary/25 bg-primary/15 text-primary hover:bg-primary/15">
-            <Sparkles className="mr-1 h-3.5 w-3.5" />
-            Destaque
-          </Badge>
-          <Badge variant="outline" className="border-border bg-background/45 text-muted-foreground">
-            {formula.sector}
-          </Badge>
-        </div>
-        <h2 className="mt-5 text-2xl font-semibold leading-tight text-foreground">{formula.name}</h2>
-        <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-muted-foreground">{formula.simpleExplanation}</p>
-        <div className="mt-4 rounded-md border border-border/70 bg-background/45 p-3 technical-code text-sm">
-          {formula.expression}
-        </div>
-        <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-5">
-          <div className="flex flex-wrap gap-2">
-            <Badge variant="outline" className="border-border bg-muted/20 text-muted-foreground">
-              {formula.variables.length} entradas
-            </Badge>
-            <Badge variant="outline" className="border-success/25 bg-success/10 text-success">
-              {formula.resultUnit || "sem unidade"}
-            </Badge>
-          </div>
-          <Button type="button" onClick={onSelect} disabled={selected} className="bg-primary text-primary-foreground hover:bg-highlight-glow">
-            {selected ? "Selecionada" : "Usar formula"}
-            {!selected && <ArrowRight className="h-4 w-4" />}
-          </Button>
-        </div>
-      </div>
-    </motion.div>
-  );
-}
-
 function SectorRail({
   sectors,
   selectedSector,
   onSelect,
-  totalFormulas,
 }: {
   sectors: Sector[];
-  selectedSector: SectorId | "todos";
-  onSelect: (sectorId: SectorId | "todos") => void;
-  totalFormulas: number;
+  selectedSector: SectorId;
+  onSelect: (sectorId: SectorId) => void;
 }) {
   return (
-    <section className="rounded-lg border border-border/60 bg-card/75 p-4 glow-card">
-      <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Setores</p>
-          <h2 className="text-lg font-semibold text-foreground">Filtre antes de procurar a formula</h2>
-        </div>
-        <p className="text-sm text-muted-foreground">O card inteiro e clicavel.</p>
-      </div>
-      <div className="flex gap-3 overflow-x-auto pb-2 pr-1 [scrollbar-width:thin]">
-        <SectorRailButton
-          title="Todos"
-          detail={`${totalFormulas} formulas`}
-          active={selectedSector === "todos"}
-          icon={Calculator}
-          onClick={() => onSelect("todos")}
-        />
+    <section className="rounded-lg border border-border/60 bg-card/75 p-3 glow-card">
+      <div className="flex gap-2 overflow-x-auto pb-1 pr-1 [scrollbar-width:thin]">
         {sectors.map((sector) => (
           <SectorRailButton
             key={sector.id}
@@ -665,8 +550,8 @@ function FormulaFinderPanel({
         <CardHeader className="border-b border-border/70 p-4">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Etapa 1</p>
-              <CardTitle className="mt-1 text-lg text-foreground">Escolha a formula</CardTitle>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Formulas</p>
+              <CardTitle className="mt-1 text-lg text-foreground">Lista do setor</CardTitle>
               <p className="mt-1 text-sm text-muted-foreground">{selectedSectorName}</p>
             </div>
             <SlidersHorizontal className="mt-1 h-4 w-4 text-muted-foreground" />
@@ -703,7 +588,7 @@ function FormulaFinderPanel({
             <div className="flex items-center justify-between gap-3">
               <p className="text-sm font-semibold text-foreground">{total} formulas encontradas</p>
               <Badge variant="outline" className="border-primary/25 bg-primary/10 text-primary">
-                {total > formulas.length ? `mostrando ${formulas.length}` : "lista completa"}
+                {total > formulas.length ? `${formulas.length} visiveis` : "filtrado"}
               </Badge>
             </div>
           </div>
@@ -779,9 +664,21 @@ function FormulaTeachingReport({ formula, result }: { formula: Formula; result: 
               {formula.name}
             </CardTitle>
           </div>
-          <Badge variant="outline" className="w-fit border-border bg-muted/20 text-muted-foreground">
-            v{formula.version} - {formula.resultUnit || "sem unidade"}
-          </Badge>
+          <div className="flex flex-wrap gap-2">
+            <Badge variant="outline" className="w-fit border-border bg-muted/20 text-muted-foreground">
+              v{formula.version} - {formula.resultUnit || "sem unidade"}
+            </Badge>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => exportFormulaPdf(formula, result)}
+              className="border-primary/25 bg-primary/10 text-primary hover:bg-primary/15"
+            >
+              <FileDown className="h-4 w-4" />
+              PDF
+            </Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="grid gap-4 p-4">
@@ -817,6 +714,98 @@ function FormulaTeachingReport({ formula, result }: { formula: Formula; result: 
       </CardContent>
     </Card>
   );
+}
+
+async function exportFormulaPdf(formula: Formula, result: string | null) {
+  const { default: jsPDF } = await import("jspdf");
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
+  const margin = 16;
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const contentWidth = pageWidth - margin * 2;
+  let y = 18;
+
+  doc.setFillColor(10, 37, 64);
+  doc.rect(0, 0, pageWidth, 34, "F");
+  doc.setTextColor(255, 106, 0);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(16);
+  doc.text("i9TMG - Relatorio de formula", margin, y);
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(10);
+  doc.text(formula.sector, margin, y + 8);
+
+  y = 48;
+  doc.setTextColor(10, 37, 64);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(15);
+  doc.text(splitPdfText(doc, formula.name, contentWidth), margin, y);
+  y += 12;
+
+  const blocks = [
+    ["Formula", formula.expression],
+    ["Resultado", result ? `${result} ${formula.resultUnit}` : `Aguardando calculo em ${formula.resultUnit || "unidade definida"}`],
+    ["Descricao", formula.description],
+    ["Explicacao", formula.simpleExplanation],
+    ["Exemplo", formula.example],
+  ];
+
+  blocks.forEach(([title, text]) => {
+    y = ensurePdfSpace(doc, y, 28, margin);
+    doc.setTextColor(255, 106, 0);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.text(title, margin, y);
+    y += 5;
+    doc.setTextColor(38, 55, 68);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    const lines = splitPdfText(doc, text, contentWidth);
+    doc.text(lines, margin, y);
+    y += lines.length * 5 + 5;
+  });
+
+  y = ensurePdfSpace(doc, y, 40, margin);
+  doc.setTextColor(255, 106, 0);
+  doc.setFont("helvetica", "bold");
+  doc.text("Variaveis", margin, y);
+  y += 6;
+  doc.setTextColor(38, 55, 68);
+  doc.setFont("helvetica", "normal");
+  formula.variables.forEach((variable) => {
+    y = ensurePdfSpace(doc, y, 12, margin);
+    const unit = variable.unit ? ` (${variable.unit})` : "";
+    const line = `${variable.name} - ${variable.label}${unit}`;
+    const lines = splitPdfText(doc, line, contentWidth);
+    doc.text(lines, margin, y);
+    y += lines.length * 5;
+  });
+
+  doc.save(`relatorio-${slugify(formula.name)}.pdf`);
+}
+
+function splitPdfText(doc: { splitTextToSize: (text: string, maxWidth: number) => string[] }, text: string, maxWidth: number) {
+  return doc.splitTextToSize(text || "-", maxWidth);
+}
+
+function ensurePdfSpace(
+  doc: { internal: { pageSize: { getHeight: () => number } }; addPage: () => unknown },
+  y: number,
+  needed: number,
+  margin: number,
+) {
+  const pageHeight = doc.internal.pageSize.getHeight();
+  if (y + needed <= pageHeight - margin) return y;
+  doc.addPage();
+  return margin;
+}
+
+function slugify(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
 }
 
 type AuditState = "ok" | "warn" | "block" | "neutral";
