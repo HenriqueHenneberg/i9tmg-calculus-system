@@ -18,7 +18,6 @@ import {
 import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { CalculationPanel } from "@/components/CalculationPanel";
-import { FormulaCard } from "@/components/FormulaCard";
 import { Mistura90Guide } from "@/components/Mistura90Guide";
 import { StepByStepViewer } from "@/components/StepByStepViewer";
 import { TechnicalAssistant } from "@/components/TechnicalAssistant";
@@ -27,7 +26,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIndustrialWorkspace } from "@/contexts/IndustrialWorkspaceContext";
 import { evaluateFormula } from "@/lib/formula-engine";
@@ -160,7 +158,7 @@ export default function Calculos() {
   );
 
   const selectedSectorName = sectors.find((sector) => sector.id === selectedSector)?.name || "Setor";
-  const visibleFormulas = filteredFormulas.slice(0, 90);
+  const visibleFormulas = filteredFormulas;
 
   const selectFormula = (formulaId: string) => {
     setSelectedFormulaId(formulaId);
@@ -298,20 +296,20 @@ export default function Calculos() {
 
       <SectorRail sectors={sectors} selectedSector={selectedSector} onSelect={selectSector} />
 
-      <section className="grid gap-4 xl:grid-cols-[360px_minmax(0,1fr)]">
-        <FormulaFinderPanel
-          formulas={visibleFormulas}
-          total={filteredFormulas.length}
-          selectedFormula={selectedFormula}
-          selectedSectorName={selectedSectorName}
-          search={search}
-          onSearch={setSearch}
-          onSelectFormula={selectFormula}
-          favoriteFormulas={favoriteFormulas}
-          mostUsed={mostUsed}
-          isFavorite={isFavorite}
-        />
+      <FormulaFinderPanel
+        formulas={visibleFormulas}
+        total={filteredFormulas.length}
+        selectedFormula={selectedFormula}
+        selectedSectorName={selectedSectorName}
+        search={search}
+        onSearch={setSearch}
+        onSelectFormula={selectFormula}
+        favoriteFormulas={favoriteFormulas}
+        mostUsed={mostUsed}
+        isFavorite={isFavorite}
+      />
 
+      <section>
         <div className="min-w-0 space-y-4">
           <CalculationPanel
             formula={selectedFormula}
@@ -544,77 +542,130 @@ function FormulaFinderPanel({
   mostUsed: Formula[];
   isFavorite: (formulaId: string) => boolean;
 }) {
+  const [expanded, setExpanded] = useState(false);
+  const visibleFormulas = expanded ? formulas : formulas.slice(0, 4);
+
+  useEffect(() => {
+    setExpanded(false);
+  }, [search, selectedSectorName]);
+
   return (
-    <aside className="min-w-0 space-y-4 xl:sticky xl:top-24 xl:self-start">
-      <Card className="gradient-industrial glow-card border-border/60">
-        <CardHeader className="border-b border-border/70 p-4">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Formulas</p>
-              <CardTitle className="mt-1 text-lg text-foreground">Lista do setor</CardTitle>
-              <p className="mt-1 text-sm text-muted-foreground">{selectedSectorName}</p>
-            </div>
-            <SlidersHorizontal className="mt-1 h-4 w-4 text-muted-foreground" />
+    <section className="min-w-0 rounded-lg border border-primary/25 bg-card/78 p-3 glow-card sm:p-4">
+      <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_380px] xl:items-center">
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-primary/25 bg-primary/10 text-primary">
+            <SlidersHorizontal className="h-4 w-4" />
+          </span>
+          <div className="min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Formulas do setor</p>
+            <h2 className="truncate text-xl font-semibold text-foreground">Escolha uma formula de {selectedSectorName}</h2>
+            <p className="mt-1 text-sm text-muted-foreground">{total} formulas disponiveis. Cada card carrega o calculo abaixo.</p>
           </div>
-          <div className="relative mt-4">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        </div>
+
+        <div className="relative min-w-0">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-primary" />
             <Input
               value={search}
               onChange={(event) => onSearch(event.target.value)}
-              placeholder="Ex: pH, correia, motor, vazao"
-              className="h-11 border-border bg-muted/25 pl-9 text-foreground focus-visible:ring-primary/40"
+              placeholder={`Filtrar formulas de ${selectedSectorName}`}
+              className="h-11 border-primary/25 bg-background/45 pl-9 text-foreground focus-visible:ring-primary/40"
             />
-          </div>
-        </CardHeader>
-        <CardContent className="p-0">
-          <Accordion type="single" collapsible className="border-b border-border/70">
-            <AccordionItem value="atalhos" className="border-0 px-4">
-              <AccordionTrigger className="py-3 text-sm hover:no-underline">
-                <span className="flex items-center gap-2 text-foreground">
-                  <Star className="h-4 w-4 text-primary" />
-                  Favoritos e mais usadas
-                </span>
-              </AccordionTrigger>
-              <AccordionContent className="pb-4">
-                <div className="space-y-4">
-                  <QuickFormulaList title="Favoritos" formulas={favoriteFormulas} empty="Nenhum favorito ainda." onSelectFormula={onSelectFormula} />
-                  <QuickFormulaList title="Mais usadas" formulas={mostUsed.slice(0, 6)} onSelectFormula={onSelectFormula} />
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
+        </div>
+      </div>
 
-          <div className="border-b border-border/70 px-4 py-3">
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-sm font-semibold text-foreground">{total} formulas encontradas</p>
-              <Badge variant="outline" className="border-primary/25 bg-primary/10 text-primary">
-                {total > formulas.length ? `${formulas.length} visiveis` : "filtrado"}
-              </Badge>
-            </div>
-          </div>
+      <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        {visibleFormulas.map((formula) => (
+          <FormulaPickButton
+            key={formula.id}
+            formula={formula}
+            selected={formula.id === selectedFormula.id}
+            favorite={isFavorite(formula.id)}
+            onClick={() => onSelectFormula(formula.id)}
+          />
+        ))}
+      </div>
 
-          <ScrollArea className="h-[690px]">
-            <div className="space-y-3 p-4">
-              {formulas.map((formula) => (
-                <FormulaCard
-                  key={formula.id}
-                  formula={formula}
-                  selected={formula.id === selectedFormula.id}
-                  favorite={isFavorite(formula.id)}
-                  compact
-                  onClick={() => onSelectFormula(formula.id)}
-                />
-              ))}
-              {formulas.length === 0 && (
-                <div className="rounded-lg border border-border/70 bg-muted/20 p-5 text-center text-sm text-muted-foreground">
-                  Nenhuma formula encontrada. Tente buscar por equipamento, grandeza ou variavel.
-                </div>
-              )}
-            </div>
-          </ScrollArea>
-        </CardContent>
-      </Card>
-    </aside>
+      {formulas.length === 0 && (
+        <div className="mt-3 rounded-lg border border-border/70 bg-muted/20 p-5 text-center text-sm text-muted-foreground">
+          Nenhuma formula encontrada neste setor.
+        </div>
+      )}
+
+      <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <Accordion type="single" collapsible className="rounded-lg border border-border/60 bg-background/25 sm:min-w-[280px]">
+          <AccordionItem value="atalhos" className="border-0 px-3">
+            <AccordionTrigger className="py-2.5 text-sm hover:no-underline">
+              <span className="flex items-center gap-2 text-foreground">
+                <Star className="h-4 w-4 text-primary" />
+                Atalhos opcionais
+              </span>
+            </AccordionTrigger>
+            <AccordionContent className="pb-3">
+              <div className="space-y-4">
+                <QuickFormulaList title="Favoritos" formulas={favoriteFormulas} empty="Nenhum favorito ainda." onSelectFormula={onSelectFormula} />
+                <QuickFormulaList title="Mais usadas" formulas={mostUsed.slice(0, 6)} onSelectFormula={onSelectFormula} />
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+
+        {formulas.length > 4 && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setExpanded((current) => !current)}
+            className="border-primary/25 bg-primary/10 text-primary hover:bg-primary/15"
+          >
+            {expanded ? "Mostrar menos" : `Mostrar todas (${formulas.length})`}
+          </Button>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function FormulaPickButton({
+  formula,
+  selected,
+  favorite,
+  onClick,
+}: {
+  formula: Formula;
+  selected: boolean;
+  favorite: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={selected}
+      className={`group min-h-[112px] rounded-lg border p-3 text-left transition-all hover:-translate-y-0.5 ${
+        selected ? "border-primary/60 bg-primary/15 shadow-[0_0_0_1px_hsl(var(--primary)/0.22)]" : "border-border/70 bg-background/35 hover:border-primary/35 hover:bg-muted/20"
+      }`}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="line-clamp-2 text-sm font-semibold leading-snug text-foreground">{formula.name}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{formula.variables.length} entradas - {formula.resultUnit || "resultado"}</p>
+        </div>
+        {favorite && <Star className="h-4 w-4 shrink-0 fill-primary text-primary" />}
+      </div>
+
+      <div className="mt-2 line-clamp-1 rounded-md border border-border/60 bg-muted/15 px-2 py-1.5 font-mono text-xs text-primary">
+        {formula.expression}
+      </div>
+
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <Badge variant="outline" className={selected ? "border-primary/35 bg-primary/15 text-primary" : "border-border bg-muted/20 text-muted-foreground"}>
+          {selected ? "Selecionada" : "Usar"}
+        </Badge>
+        <Badge variant="outline" className="border-success/20 bg-success/10 text-success">
+          {formula.status.replace("_", " ")}
+        </Badge>
+      </div>
+    </button>
   );
 }
 
